@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "BT.h"
 
 int main(int argc, char const *argv[]){
     if(argc < 3){
@@ -11,33 +12,46 @@ int main(int argc, char const *argv[]){
     sprintf(out, "%s", argv[2]);
 
     FILE* fIn = fopen(in, "r");
+    if(fIn == NULL){
+        printf("Erro na criação do arquivo de entrada\n");
+        return 1;
+    }
+
     FILE* fOut = fopen(out, "w");
+    if(fOut == NULL){
+        printf("Erro na criação do arquivo de saída\n");
+        return 1;
+    }
 
-    int ordemBT;
+    int ordemBT, nOperacoes;
     fscanf(fIn, "%d%*c", &ordemBT);
+    fscanf(fIn, "%d%*c", &nOperacoes);
 
-    //cria BT
+    BT* bt = criaBT(ordemBT);
 
     char c;
-    int n, chave, registro = 0;
-    fscanf(fIn, "%d%*c", &n);
-    for(int i=0; i<n; i++){
+    int chave, registro = 0;
+    for(int i=0; i<nOperacoes; i++){
         fscanf(fIn, "%c ", &c);
+
         if(c == 'I'){
             fscanf(fIn, "%d, %d%*c", &chave, &registro);
-            //insere na BT
+            insereBT(bt, chave, registro);
         }
         else if(c == 'R'){
             fscanf(fIn, "%d%*c", &chave);
-            //remove da BT
+            removeBT(bt, chave);
         }
         else if(c == 'B'){
             fscanf(fIn, "%d%*c", &chave);
-            //busca na BT
+            if(buscaBT(getRaizBT(bt), chave)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
+            else fprintf(fOut, "O REGISTRO NAO ESTA NA ARVORE!\n");
         }
     }
 
-    //libera BT
+    printBT(bt, fOut);
+
+    liberaBT(bt);
     fclose(fIn);
     fclose(fOut);
 

@@ -1,36 +1,88 @@
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "BT.h"
 
-
+//Node
 struct Node {
     bool    ehFolha;
     int     qtdChaves;
     int     offset;
     int    *chaves;
     int    *registros;
+    int    *offsets;
     Node  **filhos;
 };
 
-Node *criaNode();
+Node *criaNode(int ordem, bool ehFolha, int offset){
+    Node* node = malloc(sizeof(Node));
 
-void liberaNode(Node *node);
+    node->ehFolha = ehFolha;
+    node->qtdChaves = 0;
+    node->offset = offset;
+
+    node->chaves = calloc(ordem-1, sizeof(int));
+    node->registros = calloc(ordem-1, sizeof(int));
+    node->offsets = calloc(ordem-1, sizeof(int));
+
+    node->filhos = calloc(ordem, sizeof(Node));
+
+    return node;
+}
+
+void liberaNode(Node *node){
+    free(node->chaves);
+    free(node->registros);
+    free(node->offsets);
+
+    if(!ehFolhaNode(node)){
+        for(int i=0; i<node->qtdChaves; i++){
+            liberaNode(node->filhos[i]);
+        }
+    }
+    free(node->filhos);
+
+    free(node);
+}
 
 int getNumElementosNode(Node *node);
 
 void* getChavesNode(Node *node);
 
-bool ehFolhaNode(Node *node);
+bool ehFolhaNode(Node *node){
+    return node->ehFolha;
+}
 
-
- struct BT {
+//BT
+struct BT {
     int     ordem, numNos;
     Node    *raiz;
- };
+};
 
-BT *criaBT();
+BT *criaBT(int ordem){
+    BT* bt = malloc(sizeof(BT));
+    bt->ordem = ordem;
+    bt->numNos = 0;
+    bt->raiz = NULL;
 
-void insereBT(BT *bt, int chave, int registro);
+    return bt;
+}
+
+void insereBT(BT *bt, int chave, int registro){
+    Node* raiz = getRaizBT(bt);
+
+    if(raiz == NULL){
+        bt->numNos++;
+        bt->raiz = criaNode(bt->ordem, true, bt->numNos);
+        return; //retorna mesmo? to em duvida (Aline aqui)
+    }
+
+    //insere em nó cheio: split
+    //insere em nó não cheio
+
+    bt->numNos++;
+}
 
 static bool podeRemoverNode(Node *node);
 
@@ -74,6 +126,20 @@ Node *removeBT(BT *bt, int chave) {
 
 }
 
-Node *buscaBT(BT *bt, int chave);
+Node *buscaBT(Node *node, int chave);
 
-void liberaBT(BT *bt);
+void printBT(BT* bt, FILE* arq){
+    if(bt == NULL) return;
+    fprintf(arq, "\n-- ARVORE B\n");
+
+    //le bin
+}
+
+void liberaBT(BT *bt){
+    liberaNode(bt->raiz);
+    free(bt);
+}
+
+Node *getRaizBT(BT* bt){
+    return bt->raiz;
+}

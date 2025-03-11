@@ -4,15 +4,18 @@
 typedef struct BT BT;
 typedef struct Node Node;
 
-BT *criaBT();
+BT *criaBT(int ordem);
 
 void insereBT(BT *bt, int chave, int registro);
 
 Node *removeBT(BT *bt, int chave);
 
-Node *buscaBT(BT *bt, int chave);
+Node *buscaBT(Node *node, int chave);
+
+void printBT(BT* bt, FILE* arq);
 
 void liberaBT(BT *bt);
-    
 
+Node *getRaizBT(BT* bt);
+    
 #endif // !_BT_H_
