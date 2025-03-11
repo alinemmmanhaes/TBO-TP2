@@ -1,9 +1,8 @@
 #ifndef _BT_H_
 #define _BT_H_
 
-#include "Node.h"
-
 typedef struct BT BT;
+typedef struct Node Node;
 
 BT *criaBT();
 

@@ -2,6 +2,32 @@
 
 #include "BT.h"
 
+
+struct Node {
+    bool    ehFolha;
+    int     qtdChaves;
+    int     offset;
+    int    *chaves;
+    int    *registros;
+    Node  **filhos;
+};
+
+Node *criaNode();
+
+void liberaNode(Node *node);
+
+int getNumElementosNode(Node *node);
+
+void* getChavesNode(Node *node);
+
+bool ehFolhaNode(Node *node);
+
+
+ struct BT {
+    int     ordem, numNos;
+    Node    *raiz;
+ };
+
 BT *criaBT();
 
 void insereBT(BT *bt, int chave, int registro);
