@@ -11,9 +11,9 @@ struct Node {
     int     offset;
     int    *chaves;
     int    *registros;
-    int    *offsets;
+    int    *offsetFilhos;
     Node  **filhos;
-};
+};  
 
 Node *criaNode(int ordem, bool ehFolha, int offset){
     Node* node = malloc(sizeof(Node));
@@ -24,7 +24,7 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
 
     node->chaves = calloc(ordem-1, sizeof(int));
     node->registros = calloc(ordem-1, sizeof(int));
-    node->offsets = calloc(ordem-1, sizeof(int));
+    node->offsetFilhos = calloc(ordem-1, sizeof(int));
 
     node->filhos = calloc(ordem, sizeof(Node));
 
@@ -34,7 +34,7 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
 void liberaNode(Node *node){
     free(node->chaves);
     free(node->registros);
-    free(node->offsets);
+    free(node->offsetFilhos);
 
     if(!ehFolhaNode(node)){
         for(int i=0; i<node->qtdChaves; i++){
@@ -60,7 +60,7 @@ struct BT {
     Node    *raiz;
 };
 
-BT *criaBT(int ordem){
+BT *criaBT(int ordem) {
     BT* bt = malloc(sizeof(BT));
     bt->ordem = ordem;
     bt->numNos = 0;
@@ -72,16 +72,15 @@ BT *criaBT(int ordem){
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
 
+    bt->numNos++;
     if(raiz == NULL){
-        bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
+        // escreve no bin
         return; //retorna mesmo? to em duvida (Aline aqui)
     }
 
     //insere em nó cheio: split
     //insere em nó não cheio
-
-    bt->numNos++;
 }
 
 static bool podeRemoverNode(Node *node);
@@ -120,10 +119,6 @@ Node *removeBT(BT *bt, int chave) {
       *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
       *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
       */
-
-
-
-
 }
 
 Node *buscaBT(Node *node, int chave);
