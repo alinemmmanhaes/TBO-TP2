@@ -34,6 +34,11 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
 
 int getNumElementosNode(Node *node) { }
 
+int getOffset(Node *node) { 
+    if(node) return node->offset;
+    return 0;
+}
+
 void* getChavesNode(Node *node) { }
 
 bool ehFolhaNode(Node *node){
@@ -77,25 +82,81 @@ BT *criaBT(int ordem) {
 
     return bt;
 }
-void *divideNode(Node *raizNova,int ind, Node *raizAntiga) { }
+void *divideNode(Node *raizNova,int ind, Node *raizAntiga) { 
+    
+    int ordem = getOrdem(raizAntiga);
+    Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga),getOffset(raizNova)+1);
+   
+   
+    maiores->chaves = ordem/2;
 
-void *insereSemDividir(Node *raiz ,int chave) { }
+    for(int j = 0;j<(ordem-1);j++){
+        maiores->chaves[j] = raizAntiga->chaves[j+ordem];
+    }
+    if(!ehFolhaNode(raizAntiga)){
+        for (int i = 0; i < ordem; i++){
+            maiores->filhos[i] = raizAntiga->filhos[i+ordem];
+        }
+        raizAntiga->chaves = ordem - 1;
+    }
+    for(int k = raizNova->chaves+1;k>=ind+1;k--){
+        raizNova->filhos[k+1] = raizNova->filhos[k];
+    }
+    for(int l = raizNova->chaves;l>=ind;l--){
+        raizNova->chaves[l+1] = raizNova->chaves[l];
+    }
+    raizNova->chaves[ind] = raizAntiga->chaves[ordem];
+    raizNova->qtdChaves++;
+    /*
+    diskWrite(raizAntiga);
+    diskWrite(maiores);
+    diskWrite(raizNova);
+    */
+}
+
+void *insereSemDividir(Node *raiz ,int chave) { 
+    int i = raiz->qtdChaves;
+    
+    if(ehFolhaNode(raiz)){
+        while(i>=1 && (chave < raiz->chaves[i])){
+            raiz->chaves[i + 1] = raiz->chaves[i];
+            i--;
+            raiz->chaves[i + 1] = chave;
+            //não entendi pq aqui não troca os registros de lugar;      
+        }
+        raiz->qtdChaves++;
+        //diskWrite(raiz);
+    }else{
+        while(i>=1 && (chave < raiz->chaves[i]))i--;
+        i++;
+        ///Node *filho = diskRead(raiz->filhos[i]);
+        Node *filho = raiz->filhos[i];
+        if(filho->offsetFilhos == (getOrdem(filho) - 1)){
+            divideNode(raiz,i,filho);
+            if(chave>raiz->chaves[i]) i++;
+        }
+        else{
+            insereSemDividir(filho,chave);
+        }
+    }
+}
 
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
     int i = 0;
-    bt->numNos++;
+   
     if(raiz == NULL){
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
         // escreve no bin
         return; //retorna mesmo? to em duvida (Aline aqui)
     }
-    if((bt->ordem) - 1 == raiz->qtdChaves ){
+    if((bt->ordem) - 1 == raiz->qtdChaves ){ 
+        bt->numNos++;
         Node *novo = criaNode(bt->ordem, false, bt->numNos);
 
         novo->filhos[0] = raiz;
         novo = divideNode(novo, 0, raiz);
-
+        bt->numNos++;
         for(int j = 0; j<novo->qtdChaves;j++){
             if(novo->chaves[j]>chave) insereSemDividir(novo, chave);
         }
@@ -105,7 +166,7 @@ void insereBT(BT *bt, int chave, int registro){
     else{
         insereSemDividir(raiz, chave);
     }
-    //insere em nó cheio: split
+    //insere em nó f: split
     //insere em nó não cheio
 
     // escreve no bin
