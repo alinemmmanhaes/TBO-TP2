@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "BT.h"
+#include "fila.h"
 
 //Node
 struct Node {
@@ -52,6 +53,14 @@ void* getChavesNode(Node *node);
 
 bool ehFolhaNode(Node *node){
     return node->ehFolha;
+}
+
+void printNode(Node* node, FILE* arq){
+    fprintf(arq, "[");
+    for(int i=0; i<node->qtdChaves; i++){
+        fprintf(arq, "key: %d, ", node->chaves[i]);
+    }
+    fprintf(arq, "]");
 }
 
 //BT
@@ -124,6 +133,7 @@ Node *removeBT(BT *bt, int chave) {
 }
 
 bool buscaBT(Node *node, int chave){
+    if(node == NULL) return 0;
     int i = 0;
 
     while(i < node->qtdChaves && chave > node->chaves[i]) i++;
@@ -138,10 +148,34 @@ bool buscaBT(Node *node, int chave){
 
 void printBT(BT* bt, FILE* arq){
     if(bt == NULL) return;
-    fprintf(arq, "\n-- ARVORE B\n");
 
+    fprintf(arq, "\n-- ARVORE B\n");
     //le bin
-    //printa arvore
+
+    Fila* fila = criaFila();
+    insereFila(fila, bt->raiz);
+
+    int n = 1; //numero de nodes na mesma linha de impressao
+    while(!filaVazia(fila)){
+        int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
+
+        for(int j=0; j<n; j++){
+            Node* node = (Node*)removeFila(fila);
+            printNode(node, arq);
+
+            if(!ehFolhaNode(node)){
+                int tamanho = node->qtdChaves;
+                for(int i=0; i<=tamanho; i++){
+                    insereFila(fila, node->filhos[i]);
+                }
+                numNodesLinha += tamanho + 1;
+            }
+        }
+
+        n = numNodesLinha;
+        fprintf(arq, "\n");
+    }
+    liberaFila(fila);
 }
 
 void liberaBT(BT *bt){
