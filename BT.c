@@ -81,6 +81,8 @@ void insereBT(BT *bt, int chave, int registro){
 
     //insere em nó cheio: split
     //insere em nó não cheio
+
+    // escreve no bin
 }
 
 static bool podeRemoverNode(Node *node);
@@ -121,13 +123,25 @@ Node *removeBT(BT *bt, int chave) {
       */
 }
 
-Node *buscaBT(Node *node, int chave);
+bool buscaBT(Node *node, int chave){
+    int i = 0;
+
+    while(i < node->qtdChaves && chave > node->chaves[i]) i++;
+
+    if(i < node->qtdChaves && chave == node->chaves[i]) return true;
+    else if(ehFolhaNode(node)) return false;
+    else{
+        //diskRead(node->filhos[i]);
+        return buscaBT(node->filhos[i], chave);
+    }
+}
 
 void printBT(BT* bt, FILE* arq){
     if(bt == NULL) return;
     fprintf(arq, "\n-- ARVORE B\n");
 
     //le bin
+    //printa arvore
 }
 
 void liberaBT(BT *bt){
