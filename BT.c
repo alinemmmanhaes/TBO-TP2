@@ -55,7 +55,7 @@ bool ehFolhaNode(Node *node){
     return node->ehFolha;
 }
 
-void printNode(Node* node, FILE* arq){
+void printNode(Node *node, FILE *arq){
     fprintf(arq, "[");
     for(int i=0; i<node->qtdChaves; i++){
         fprintf(arq, "key: %d, ", node->chaves[i]);
@@ -89,7 +89,7 @@ void insereBT(BT *bt, int chave, int registro){
         return; //retorna mesmo? to em duvida (Aline aqui)
     }
     if((bt->ordem) - 1 == raiz->qtdChaves ){
-        Node *novo = criaNode(bt->ordem,false, bt->numNos);
+        Node *novo = criaNode(bt->ordem, false, bt->numNos);
 
         novo->filhos[0] = raiz;
         novo = divideNode(novo, 0, raiz);
@@ -200,14 +200,14 @@ Node *removeBT(BT *bt, int chave) {
     return node;
 }
 
-bool buscaBT(Node *node, int chave){
-    if(node == NULL) return 0;
+Node *buscaBT(Node *node, int chave){
+    if(node == NULL) return NULL;
     int i = 0;
 
     while(i < node->qtdChaves && chave > node->chaves[i]) i++;
 
-    if(i < node->qtdChaves && chave == node->chaves[i]) return true;
-    else if(ehFolhaNode(node)) return false;
+    if(i < node->qtdChaves && chave == node->chaves[i]) return node;
+    else if(ehFolhaNode(node)) return NULL;
     else{
         //diskRead(node->filhos[i]);
         return buscaBT(node->filhos[i], chave);

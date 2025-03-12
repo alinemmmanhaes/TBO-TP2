@@ -10,7 +10,7 @@ void insereBT(BT *bt, int chave, int registro);
 
 Node *removeBT(BT *bt, int chave);
 
-bool buscaBT(Node *node, int chave);
+Node *buscaBT(Node *node, int chave);
 
 void printBT(BT* bt, FILE* arq);
 
