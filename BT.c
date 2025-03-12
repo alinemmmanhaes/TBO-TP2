@@ -77,17 +77,32 @@ BT *criaBT(int ordem) {
 
     return bt;
 }
-
+void *divideNode(Node *raizNova,int ind, Node *raizAntiga);
+void *insereSemDividir(Node *raiz ,int chave);
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
-
+    int i = 0;
     bt->numNos++;
     if(raiz == NULL){
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
         // escreve no bin
         return; //retorna mesmo? to em duvida (Aline aqui)
     }
+    if((bt->ordem) - 1 == raiz->qtdChaves ){
+        Node *novo = criaNode(bt->ordem,false, bt->numNos);
 
+        novo->filhos[0] = raiz;
+        novo = divideNode(novo, 0, raiz);
+
+        for(int j = 0; j<novo->qtdChaves;j++){
+            if(novo->chaves[j]>chave) insereSemDividir(novo, chave);
+        }
+        raiz = novo;
+
+    }
+    else{
+        insereSemDividir(raiz, chave);
+    }
     //insere em nó cheio: split
     //insere em nó não cheio
 
