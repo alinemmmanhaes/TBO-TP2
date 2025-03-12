@@ -85,7 +85,30 @@ void insereBT(BT *bt, int chave, int registro){
     // escreve no bin
 }
 
-static bool podeRemoverNode(Node *node);
+static Node *uneNode(Node *n1, Node *n2);
+
+static int getIdxChave(Node *node, int chave) {
+    if (node == NULL) return -1;
+    for(int i = 0; i < node->qtdChaves; i++) {
+        if (node->chaves[i] == chave) return i;
+    }
+    return -1;
+}
+
+static int getOrdem(Node *node) {
+    if (node == NULL) return 0;
+    return sizeof(node->registros)/sizeof(int);
+}
+
+static bool podeRemoverDoNode(Node *node) {
+    if (node == NULL) return false;
+
+    if (node->qtdChaves >= getOrdem(node)/2 - 1) return true;
+    return false;
+}
+
+static int *getMaiorFilhoEsquerda(Node *node);
+static int *getMenorFilhoDireita(Node *node);
 
 Node *removeBT(BT *bt, int chave) {
     /** 
@@ -93,12 +116,17 @@ Node *removeBT(BT *bt, int chave) {
      *      Cada nó deve ter pelo menos (t/2) - 1 elementos
      */
 
-    Node *encontrado = buscaBT(bt, chave);
+    Node *node = buscaBT(bt, chave);
+    int idxChave = getIdxChave(node, chave);
     /** ----- Caso 1 ----- */
     /** Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
-    if (ehFolhaNode(encontrado) && podeRemoverNode(encontrado)) {
-        /** tira do disco */
-        return encontrado;
+    if (ehFolhaNode(node) && podeRemoverDoNode(node)) {
+        node->qtdChaves--;
+        /** tem q remover essa chave de alguma maneira
+         * o problema é como: chaves podem ser negativas? se sim, calloc n deve funcionar
+         */
+        /** tira do disco o nó "node" */
+        return node;
     }
 
     /** ----- Caso 2 ----- */
@@ -110,7 +138,30 @@ Node *removeBT(BT *bt, int chave) {
      * 
      *      (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro
      */
-    
+
+    /** 
+     * ADENDO: pode haver vai ter alguma inconsistencia por possível erro nos ponteiros 
+     * ou enderecos em ambos casos */
+    if (podeRemoverDoNode(node->filhos[idxChave]) && podeRemoverDoNode(node->filhos[idxChave+1])) {
+        /** ADENDO: como saber se é folha? */
+        Node *new = uneNode(node->filhos[idxChave], node->filhos[idxChave+1]);
+        /** tira do disco o nó "node" */
+        /** reescreve o node new no lugar do filho a esquerda da chave */
+
+    } else if (podeRemoverDoNode(node->filhos[idxChave])) {
+        int *registro = getMaiorFilhoEsquerda(node->filhos[idxChave+1]);
+        int aux = *registro;
+        *registro = node->registros[idxChave];
+        node->registros[idxChave] = aux;
+        /** tira do disco o nó "node" */
+
+    } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
+        int *registro = getMenorFilhoDireita(node->filhos[idxChave+1]);
+        int aux = *registro;
+        *registro = node->registros[idxChave];
+        node->registros[idxChave] = aux;
+        /** tira do disco o nó "node" */
+    }
 
      /** ----- Caso 3 ----- */
      /**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
@@ -121,6 +172,8 @@ Node *removeBT(BT *bt, int chave) {
       *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
       *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
       */
+
+    return node;
 }
 
 bool buscaBT(Node *node, int chave){
