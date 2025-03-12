@@ -32,6 +32,14 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
     return node;
 }
 
+int getNumElementosNode(Node *node) { }
+
+void* getChavesNode(Node *node) { }
+
+bool ehFolhaNode(Node *node){
+    return node->ehFolha;
+}
+
 void liberaNode(Node *node){
     free(node->chaves);
     free(node->registros);
@@ -45,14 +53,6 @@ void liberaNode(Node *node){
     free(node->filhos);
 
     free(node);
-}
-
-int getNumElementosNode(Node *node);
-
-void* getChavesNode(Node *node);
-
-bool ehFolhaNode(Node *node){
-    return node->ehFolha;
 }
 
 void printNode(Node *node, FILE *arq){
@@ -77,8 +77,10 @@ BT *criaBT(int ordem) {
 
     return bt;
 }
-void *divideNode(Node *raizNova,int ind, Node *raizAntiga);
-void *insereSemDividir(Node *raiz ,int chave);
+void *divideNode(Node *raizNova,int ind, Node *raizAntiga) { }
+
+void *insereSemDividir(Node *raiz ,int chave) { }
+
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
     int i = 0;
@@ -109,7 +111,7 @@ void insereBT(BT *bt, int chave, int registro){
     // escreve no bin
 }
 
-static Node *uneNode(Node *n1, Node *n2);
+static Node *uneNode(Node *n1, Node *n2) { }
 
 static int getIdxChave(Node *node, int chave) {
     if (node == NULL) return -1;
@@ -131,8 +133,9 @@ static bool podeRemoverDoNode(Node *node) {
     return false;
 }
 
-static int *getMaiorFilhoEsquerda(Node *node);
-static int *getMenorFilhoDireita(Node *node);
+static int *getMaiorRegistroFilhoEsquerda(Node *node) { }
+
+static int *getMenorRegistroFilhoDireita(Node *node) { }
 
 Node *removeBT(BT *bt, int chave) {
     /** 
@@ -140,7 +143,7 @@ Node *removeBT(BT *bt, int chave) {
      *      Cada nó deve ter pelo menos (t/2) - 1 elementos
      */
 
-    Node *node = buscaBT(bt, chave);
+    Node *node = buscaBT(bt->raiz, chave);
     int idxChave = getIdxChave(node, chave);
     /** ----- Caso 1 ----- */
     /** Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
@@ -173,14 +176,14 @@ Node *removeBT(BT *bt, int chave) {
         /** reescreve o node new no lugar do filho a esquerda da chave */
 
     } else if (podeRemoverDoNode(node->filhos[idxChave])) {
-        int *registro = getMaiorFilhoEsquerda(node->filhos[idxChave+1]);
+        int *registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
         int aux = *registro;
         *registro = node->registros[idxChave];
         node->registros[idxChave] = aux;
         /** tira do disco o nó "node" */
 
     } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
-        int *registro = getMenorFilhoDireita(node->filhos[idxChave+1]);
+        int *registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
         int aux = *registro;
         *registro = node->registros[idxChave];
         node->registros[idxChave] = aux;
