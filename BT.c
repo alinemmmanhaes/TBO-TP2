@@ -67,6 +67,10 @@ Node **getFilhosNode(Node *node) {
     return node->filhos;
 }
 
+int getOrdemNode(Node *node) {
+    if (node == NULL) return -1;
+    return (sizeof(node->registros)/sizeof(int)) + 1;
+}
 
 void liberaNode(Node *node){
     if (node == NULL) return;
@@ -111,28 +115,34 @@ BT *criaBT(int ordem) {
 
     return bt;
 }
-void *divideNode(Node *raizNova,int ind, Node *raizAntiga) { 
-    int ordem = getOrdem(raizAntiga);
-    Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga),getOffset(raizNova)+1);
-   
-    maiores->chaves = ordem/2;
 
-    for(int j = 0;j<(ordem-1);j++){
-        maiores->chaves[j] = raizAntiga->chaves[j+ordem];
+void divideNode(Node *raizNova, int ind, Node *raizAntiga) { 
+    int ordem = getOrdemNode(raizAntiga);
+    //bt->numNos++; e indices
+    Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga), getOffset(raizNova)+1);
+   
+    maiores->qtdChaves = ordem/2;
+
+    for(int j = 0; j<(ordem-1); j++){
+        maiores->chaves[j] = raizAntiga->chaves[j+ordem]; //index j+ordem?
+        maiores->registros[j] = raizAntiga->registros[j+ordem];
     }
+
     if(!ehFolhaNode(raizAntiga)){
         for (int i = 0; i < ordem; i++){
             maiores->filhos[i] = raizAntiga->filhos[i+ordem];
         }
-        raizAntiga->chaves = ordem - 1;
     }
-
-    for(int k = raizNova->chaves+1;k>=ind+1;k--){
-        raizNova->filhos[k+1] = raizNova->filhos[k];
+    raizAntiga->qtdChaves = ordem - 1;
+    
+    for(int k = raizNova->qtdChaves; k >= ind+1; k--){
+        raizNova->filhos[k] = raizNova->filhos[k-1];
     }
+    raizNova->filhos[ind] = maiores; //c_{i+1}[x] <- z
 
-    for(int l = raizNova->chaves;l>=ind;l--){
-        raizNova->chaves[l+1] = raizNova->chaves[l];
+    for(int l = raizNova->qtdChaves; l >= ind; l--){ //>= ind 
+        raizNova->chaves[l] = raizNova->chaves[l-1];
+        raizNova->registros[l] = raizNova->registros[l-1];
     }
 
     raizNova->chaves[ind] = raizAntiga->chaves[ordem];
@@ -144,42 +154,42 @@ void *divideNode(Node *raizNova,int ind, Node *raizAntiga) {
     */
 }
 
-void *insereSemDividir(Node *raiz ,int chave) { 
+void insereSemDividir(Node *raiz, int chave, int registro) { 
     int i = raiz->qtdChaves;
     
     if(ehFolhaNode(raiz)){
-        while(i>=1 && (chave < raiz->chaves[i])){
-            raiz->chaves[i + 1] = raiz->chaves[i];
+        while(i>=1 && (chave < raiz->chaves[i-1])){
+            raiz->chaves[i] = raiz->chaves[i-1];
+            raiz->registros[i] = raiz->registros[i-1];
             i--;
-            raiz->chaves[i + 1] = chave;
-            //não entendi pq aqui não troca os registros de lugar;      
+            raiz->chaves[i] = chave;
+            raiz->registros[i] = registro;     
         }
         raiz->qtdChaves++;
         //diskWrite(raiz);
 
     }else{
-        while(i>=1 && (chave < raiz->chaves[i]))i--;
+        while(i>=1 && (chave < raiz->chaves[i-1])) i--;
         i++;
         ///Node *filho = diskRead(raiz->filhos[i]);
-        Node *filho = raiz->filhos[i];
-        if(filho->offsetFilhos == (getOrdem(filho) - 1)){
-            divideNode(raiz,i,filho);
-            if(chave>raiz->chaves[i]) i++;
+        Node *filho = raiz->filhos[i-1];
+        if(getQtdChavesNode(filho) == (getOrdemNode(filho) - 1)){
+            divideNode(raiz, i-1, filho);
+            if(chave > raiz->chaves[i-1]) i++;
 
-        } else{
-            insereSemDividir(filho,chave);
         }
+        insereSemDividir(filho, chave, registro);
     }
 }
 
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
-    int i = 0;
    
     if(raiz == NULL){
+        bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
         // escreve no bin
-        return; //retorna mesmo? to em duvida (Aline aqui)
+        return;
     }
 
     if((bt->ordem) - 1 == raiz->qtdChaves ){ 
@@ -187,15 +197,12 @@ void insereBT(BT *bt, int chave, int registro){
         Node *novo = criaNode(bt->ordem, false, bt->numNos);
 
         novo->filhos[0] = raiz;
-        novo = divideNode(novo, 0, raiz);
-        bt->numNos++;
-        for(int j = 0; j<novo->qtdChaves;j++){
-            if(novo->chaves[j]>chave) insereSemDividir(novo, chave);
-        }
+        divideNode(novo, 0, raiz);
+        insereSemDividir(novo, chave, registro);
         raiz = novo;
 
     } else{
-        insereSemDividir(raiz, chave);
+        insereSemDividir(raiz, chave, registro);
     }
     //insere em nó f: split
     //insere em nó não cheio
@@ -226,7 +233,7 @@ static int getIdxChave(Node *node, int chave) {
 static bool podeRemoverDoNode(Node *node) {
     if (node == NULL) return false;
 
-    if (node->qtdChaves >= getOrdem(node)/2 - 1) return true;
+    if (node->qtdChaves >= getOrdemNode(node)/2 - 1) return true;
     return false;
 }
 
@@ -377,12 +384,12 @@ Node *getRaizBT(BT* bt) {
     return bt->raiz;
 }
 
-int getOrdem(BT *bt) {
+int getOrdemBT(BT *bt) {
     if (bt == NULL) return -1;
     return bt->ordem;
 }
 
-int getNumNos(BT *bt) {
+int getNumNosBT(BT *bt) {
     if (bt == NULL) return -1;
     return bt->numNos;
 }

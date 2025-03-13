@@ -16,9 +16,9 @@ void printBT(BT* bt, FILE* arq);
 
 Node *getRaizBT(BT* bt);
 
-int getOrdem(BT *bt);
+int getOrdemBT(BT *bt);
 
-int getNumNos(BT *bt);
+int getNumNosBT(BT *bt);
 
 void liberaBT(BT *bt);
 
