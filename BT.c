@@ -32,25 +32,50 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
     return node;
 }
 
-int getNumElementosNode(Node *node) { }
-
-int getOffset(Node *node) { 
-    if(node) return node->offset;
-    return 0;
-}
-
-void* getChavesNode(Node *node) { }
-
-bool ehFolhaNode(Node *node){
+bool ehFolhaNode(Node *node) {
+    if (node == NULL) return false;
     return node->ehFolha;
 }
 
+int getQtdChavesNode(Node *node) {
+    if (node == NULL) return -1;
+    return node->qtdChaves;
+}
+
+int getOffset(Node *node) { 
+    if(node == NULL) return -1;
+    return node->offset;
+}
+
+int *getChavesNode(Node *node) {
+    if (node == NULL) return NULL;
+    return node->chaves;
+}
+
+int *getRegistrosNode(Node *node) {
+    if (node == NULL) return NULL;
+    return node->registros;
+}
+
+int *getOffsetFilhos(Node *node) {
+    if (node == NULL) return NULL;
+    return node->offsetFilhos;
+}
+
+Node **getFilhosNode(Node *node) {
+    if (node == NULL) return NULL;
+    return node->filhos;
+}
+
+
 void liberaNode(Node *node){
+    if (node == NULL) return;
+
     free(node->chaves);
     free(node->registros);
     free(node->offsetFilhos);
 
-    if(!ehFolhaNode(node)){
+    if (!ehFolhaNode(node)){
         for(int i=0; i<node->qtdChaves; i++){
             liberaNode(node->filhos[i]);
         }
@@ -61,6 +86,8 @@ void liberaNode(Node *node){
 }
 
 void printNode(Node *node, FILE *arq){
+    if (node == NULL || arq == NULL) return;
+
     fprintf(arq, "[");
     for(int i=0; i<node->qtdChaves; i++){
         fprintf(arq, "key: %d, ", node->chaves[i]);
@@ -71,10 +98,12 @@ void printNode(Node *node, FILE *arq){
 //BT
 struct BT {
     int     ordem, numNos;
-    Node    *raiz;
+    Node   *raiz;
 };
 
 BT *criaBT(int ordem) {
+    if (ordem <= 0) return NULL;
+
     BT* bt = malloc(sizeof(BT));
     bt->ordem = ordem;
     bt->numNos = 0;
@@ -83,10 +112,8 @@ BT *criaBT(int ordem) {
     return bt;
 }
 void *divideNode(Node *raizNova,int ind, Node *raizAntiga) { 
-    
     int ordem = getOrdem(raizAntiga);
     Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga),getOffset(raizNova)+1);
-   
    
     maiores->chaves = ordem/2;
 
@@ -99,12 +126,15 @@ void *divideNode(Node *raizNova,int ind, Node *raizAntiga) {
         }
         raizAntiga->chaves = ordem - 1;
     }
+
     for(int k = raizNova->chaves+1;k>=ind+1;k--){
         raizNova->filhos[k+1] = raizNova->filhos[k];
     }
+
     for(int l = raizNova->chaves;l>=ind;l--){
         raizNova->chaves[l+1] = raizNova->chaves[l];
     }
+
     raizNova->chaves[ind] = raizAntiga->chaves[ordem];
     raizNova->qtdChaves++;
     /*
@@ -126,6 +156,7 @@ void *insereSemDividir(Node *raiz ,int chave) {
         }
         raiz->qtdChaves++;
         //diskWrite(raiz);
+
     }else{
         while(i>=1 && (chave < raiz->chaves[i]))i--;
         i++;
@@ -134,8 +165,8 @@ void *insereSemDividir(Node *raiz ,int chave) {
         if(filho->offsetFilhos == (getOrdem(filho) - 1)){
             divideNode(raiz,i,filho);
             if(chave>raiz->chaves[i]) i++;
-        }
-        else{
+
+        } else{
             insereSemDividir(filho,chave);
         }
     }
@@ -150,6 +181,7 @@ void insereBT(BT *bt, int chave, int registro){
         // escreve no bin
         return; //retorna mesmo? to em duvida (Aline aqui)
     }
+
     if((bt->ordem) - 1 == raiz->qtdChaves ){ 
         bt->numNos++;
         Node *novo = criaNode(bt->ordem, false, bt->numNos);
@@ -162,8 +194,7 @@ void insereBT(BT *bt, int chave, int registro){
         }
         raiz = novo;
 
-    }
-    else{
+    } else{
         insereSemDividir(raiz, chave);
     }
     //insere em nó f: split
@@ -172,7 +203,17 @@ void insereBT(BT *bt, int chave, int registro){
     // escreve no bin
 }
 
-static Node *uneNode(Node *n1, Node *n2) { }
+static Node *uneNode(Node *n1, Node *n2) {
+    /** os indices estao certos? */
+    for(int i = 0; i < getQtdChavesNode(n2); i++) {
+        n1->chaves[getQtdChavesNode(n1)] = n2->chaves[i];
+        n1->registros[getQtdChavesNode(n1)] = n2->chaves[i];
+        n1->filhos[getQtdChavesNode(n1)] = n2->filhos[i];
+        n1->qtdChaves++;
+    }
+
+    liberaNode(n2); /** precisa liberar? ou é certo liberar? */
+}
 
 static int getIdxChave(Node *node, int chave) {
     if (node == NULL) return -1;
@@ -182,11 +223,6 @@ static int getIdxChave(Node *node, int chave) {
     return -1;
 }
 
-static int getOrdem(Node *node) {
-    if (node == NULL) return 0;
-    return sizeof(node->registros)/sizeof(int);
-}
-
 static bool podeRemoverDoNode(Node *node) {
     if (node == NULL) return false;
 
@@ -194,25 +230,48 @@ static bool podeRemoverDoNode(Node *node) {
     return false;
 }
 
-static int *getMaiorRegistroFilhoEsquerda(Node *node) { }
+static int getMaiorRegistroFilhoEsquerda(Node *node) {
+    if (node == NULL) return -999666999;
+    return node->registros[getQtdChavesNode(node) - 1];
+}
 
-static int *getMenorRegistroFilhoDireita(Node *node) { }
+static int getMaiorChaveFilhoEsquerda(Node *node) {
+    if (node == NULL) return -999666999;
+    return node->chaves[getQtdChavesNode(node) - 1];
+}
+
+static int getMenorRegistroFilhoDireita(Node *node) {
+    if (node == NULL) return -999666999;
+
+    return node->registros[0];
+}
+
+static int getMenorChaveFilhoDireita(Node *node) {
+    if (node == NULL) return -999666999;
+
+    return node->chaves[0];
+}
+
+void trocaConteudos(int *data_1, int *data_2) {
+    int *aux = *data_1;
+    *data_1 = *data_2;
+    *data_2 = *aux;
+}
+
+void shiftLeft(Node *node) { }
 
 Node *removeBT(BT *bt, int chave) {
-    /** 
-     * Observações possíveis:
-     *      Cada nó deve ter pelo menos (t/2) - 1 elementos
-     */
+    if (bt == NULL) return NULL;
 
+    /** Observações possíveis: Cada nó deve ter pelo menos (t/2) - 1 elementos */
     Node *node = buscaBT(bt->raiz, chave);
     int idxChave = getIdxChave(node, chave);
+
     /** ----- Caso 1 ----- */
     /** Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
     if (ehFolhaNode(node) && podeRemoverDoNode(node)) {
+        shiftLeft(node);
         node->qtdChaves--;
-        /** tem q remover essa chave de alguma maneira
-         * o problema é como: chaves podem ser negativas? se sim, calloc n deve funcionar
-         */
         /** tira do disco o nó "node" */
         return node;
     }
@@ -227,44 +286,48 @@ Node *removeBT(BT *bt, int chave) {
      *      (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro
      */
 
-    /** 
-     * ADENDO: pode haver vai ter alguma inconsistencia por possível erro nos ponteiros 
-     * ou enderecos em ambos casos */
+    /* (C) */
     if (podeRemoverDoNode(node->filhos[idxChave]) && podeRemoverDoNode(node->filhos[idxChave+1])) {
-        /** ADENDO: como saber se é folha? */
+        shiftLeft(node);
         Node *new = uneNode(node->filhos[idxChave], node->filhos[idxChave+1]);
         /** tira do disco o nó "node" */
         /** reescreve o node new no lugar do filho a esquerda da chave */
 
+    /* (A) */
     } else if (podeRemoverDoNode(node->filhos[idxChave])) {
+        shiftLeft(node);
         int *registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
-        int aux = *registro;
-        *registro = node->registros[idxChave];
-        node->registros[idxChave] = aux;
+        trocaConteudos(registro, node->registros[idxChave]);
+        trocaConteudos(chave, node->chaves[idxChave]);
         /** tira do disco o nó "node" */
 
+    /* (B) */
     } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
+        shiftLeft(node);
         int *registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
-        int aux = *registro;
-        *registro = node->registros[idxChave];
-        node->registros[idxChave] = aux;
+        trocaConteudos(registro, node->registros[idxChave+1]);
+        trocaConteudos(chave, node->chaves[idxChave+1]);
         /** tira do disco o nó "node" */
     }
 
-     /** ----- Caso 3 ----- */
-     /**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
-      *     (A) (distribuicao) se ci[x] possuir t/2 -1 elementos e possuir um irmao adj com pelo 
-      * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
-      * irmaos adjacentes
-      * 
-      *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
-      *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
-      */
+    /** ----- Caso 3 ----- */
+    /**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
+     *     (A) (distribuicao) se ci[x] possuir t/2 -1 elementos e possuir um irmao adj com pelo 
+     * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
+     * irmaos adjacentes
+     * 
+     *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
+     *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
+     */
+    
+
+    
+
 
     return node;
 }
 
-Node *buscaBT(Node *node, int chave){
+Node *buscaBT(Node *node, int chave) {
     if(node == NULL) return NULL;
     int i = 0;
 
@@ -272,7 +335,7 @@ Node *buscaBT(Node *node, int chave){
 
     if(i < node->qtdChaves && chave == node->chaves[i]) return node;
     else if(ehFolhaNode(node)) return NULL;
-    else{
+    else {
         //diskRead(node->filhos[i]);
         return buscaBT(node->filhos[i], chave);
     }
@@ -297,7 +360,7 @@ void printBT(BT* bt, FILE* arq){
 
             if(!ehFolhaNode(node)){
                 int tamanho = node->qtdChaves;
-                for(int i=0; i<=tamanho; i++){
+                for(int i=0; i<=tamanho; i++) {
                     insereFila(fila, node->filhos[i]);
                 }
                 numNodesLinha += tamanho + 1;
@@ -310,11 +373,23 @@ void printBT(BT* bt, FILE* arq){
     liberaFila(fila);
 }
 
-void liberaBT(BT *bt){
-    liberaNode(bt->raiz);
-    free(bt);
+Node *getRaizBT(BT* bt) {
+    return bt->raiz;
 }
 
-Node *getRaizBT(BT* bt){
-    return bt->raiz;
+int getOrdem(BT *bt) {
+    if (bt == NULL) return -1;
+    return bt->ordem;
+}
+
+int getNumNos(BT *bt) {
+    if (bt == NULL) return -1;
+    return bt->numNos;
+}
+
+void liberaBT(BT *bt) {
+    if (bt == NULL) return;
+
+    liberaNode(bt->raiz);
+    free(bt);
 }

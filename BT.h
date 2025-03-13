@@ -14,8 +14,12 @@ Node *buscaBT(Node *node, int chave);
 
 void printBT(BT* bt, FILE* arq);
 
+Node *getRaizBT(BT* bt);
+
+int getOrdem(BT *bt);
+
+int getNumNos(BT *bt);
+
 void liberaBT(BT *bt);
 
-Node *getRaizBT(BT* bt);
-    
 #endif // !_BT_H_
