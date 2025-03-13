@@ -116,36 +116,36 @@ BT *criaBT(int ordem) {
     return bt;
 }
 
-void divideNode(Node *raizNova, int ind, Node *raizAntiga) { 
+void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) { 
     int ordem = getOrdemNode(raizAntiga);
-    //bt->numNos++; e indices
+    bt->numNos++;
     Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga), getOffset(raizNova)+1);
    
     maiores->qtdChaves = ordem/2;
-
-    for(int j = 0; j<(ordem-1); j++){
-        maiores->chaves[j] = raizAntiga->chaves[j+ordem]; //index j+ordem?
-        maiores->registros[j] = raizAntiga->registros[j+ordem];
+    int limite = ordem - ordem/2;
+    for(int j = 0; j<(limite-1); j++){
+        maiores->chaves[j] = raizAntiga->chaves[j+limite]; //index j+ordem?
+        maiores->registros[j] = raizAntiga->registros[j+limite];
     }
 
     if(!ehFolhaNode(raizAntiga)){
-        for (int i = 0; i < ordem; i++){
-            maiores->filhos[i] = raizAntiga->filhos[i+ordem];
+        for (int i = 0; i < limite; i++){
+            maiores->filhos[i] = raizAntiga->filhos[i+limite];
         }
     }
-    raizAntiga->qtdChaves = ordem - 1;
+    raizAntiga->qtdChaves = limite - 1;
     
-    for(int k = raizNova->qtdChaves; k >= ind+1; k--){
+    for(int k = raizNova->qtdChaves+1; k >= ind+1; k--){
         raizNova->filhos[k] = raizNova->filhos[k-1];
     }
-    raizNova->filhos[ind] = maiores; //c_{i+1}[x] <- z
+    raizNova->filhos[ind+1] = maiores; //c_{i+1}[x] <- z
 
-    for(int l = raizNova->qtdChaves; l >= ind; l--){ //>= ind 
+    for(int l = raizNova->qtdChaves; l > ind; l--){ //>= ind 
         raizNova->chaves[l] = raizNova->chaves[l-1];
         raizNova->registros[l] = raizNova->registros[l-1];
     }
 
-    raizNova->chaves[ind] = raizAntiga->chaves[ordem];
+    raizNova->chaves[ind] = raizAntiga->chaves[limite-1];
     raizNova->qtdChaves++;
     /*
     diskWrite(raizAntiga);
@@ -154,7 +154,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga) {
     */
 }
 
-void insereSemDividir(Node *raiz, int chave, int registro) { 
+void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) { 
     int i = raiz->qtdChaves;
     
     if(ehFolhaNode(raiz)){
@@ -165,7 +165,9 @@ void insereSemDividir(Node *raiz, int chave, int registro) {
             raiz->chaves[i] = chave;
             raiz->registros[i] = registro;     
         }
-        raiz->qtdChaves++;
+       
+        insereChaveRegistro(raiz, chave, registro, i);
+        //raiz->qtdChaves++;
         //diskWrite(raiz);
 
     }else{
@@ -174,20 +176,28 @@ void insereSemDividir(Node *raiz, int chave, int registro) {
         ///Node *filho = diskRead(raiz->filhos[i]);
         Node *filho = raiz->filhos[i-1];
         if(getQtdChavesNode(filho) == (getOrdemNode(filho) - 1)){
-            divideNode(raiz, i-1, filho);
+            divideNode(raiz, i-1, filho, bt);
             if(chave > raiz->chaves[i-1]) i++;
 
         }
-        insereSemDividir(filho, chave, registro);
+        insereSemDividir(filho, chave, registro, bt);
     }
+    
 }
+void insereChaveRegistro(Node *n, int chave, int registro, int ind){
+    if(n==NULL) return;
 
+    n->chaves[ind] = chave;
+    n->registros[ind] = registro;
+    n->qtdChaves++;
+}
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
    
     if(raiz == NULL){
         bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
+        insereChaveRegistro(bt->raiz, chave, registro, 0);
         // escreve no bin
         return;
     }
@@ -197,15 +207,13 @@ void insereBT(BT *bt, int chave, int registro){
         Node *novo = criaNode(bt->ordem, false, bt->numNos);
 
         novo->filhos[0] = raiz;
-        divideNode(novo, 0, raiz);
-        insereSemDividir(novo, chave, registro);
+        divideNode(novo, 0, raiz, bt);
+        insereSemDividir(novo, chave, registro, bt);
         raiz = novo;
 
     } else{
-        insereSemDividir(raiz, chave, registro);
+        insereSemDividir(raiz, chave, registro, bt);
     }
-    //insere em nó f: split
-    //insere em nó não cheio
 
     // escreve no bin
 }

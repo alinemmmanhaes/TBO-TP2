@@ -14,6 +14,8 @@ Node *buscaBT(Node *node, int chave);
 
 void printBT(BT* bt, FILE* arq);
 
+void insereChaveRegistro(Node *n, int chave, int registro, int ind);
+
 Node *getRaizBT(BT* bt);
 
 int getOrdemBT(BT *bt);

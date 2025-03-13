@@ -3,21 +3,21 @@
 #include "BT.h"
 
 int main(int argc, char const *argv[]){
-    if(argc < 3){
+    /*if(argc < 3){
         printf("Faltam parâmetros para rodar o código\n");
         return 1;
     }
     char in[100], out[100];
     sprintf(in, "%s", argv[1]);
     sprintf(out, "%s", argv[2]);
-
-    FILE* fIn = fopen(in, "r");
+*/
+    FILE* fIn = fopen("caso_teste_5.txt", "r");
     if(fIn == NULL){
         printf("Erro na criação do arquivo de entrada\n");
         return 1;
     }
 
-    FILE* fOut = fopen(out, "w");
+    FILE* fOut = fopen("saida.txt", "w");
     if(fOut == NULL){
         printf("Erro na criação do arquivo de saída\n");
         return 1;
@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]){
 
     char c;
     int chave, registro = 0;
-    for(int i=0; i<nOperacoes; i++){
+    for(int i=0; i<4; i++){
         fscanf(fIn, "%c ", &c);
 
         if(c == 'I'){
@@ -47,6 +47,7 @@ int main(int argc, char const *argv[]){
             if(buscaBT(getRaizBT(bt), chave)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
             else fprintf(fOut, "O REGISTRO NAO ESTA NA ARVORE!\n");
         }
+        if(i==3) printBT(bt, fOut);
     }
 
     printBT(bt, fOut);
