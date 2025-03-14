@@ -10,6 +10,7 @@ struct Node {
     bool    ehFolha;
     int     qtdChaves;
     int     offset;
+    int     ordem;
     int    *chaves;
     int    *registros;
     int    *offsetFilhos;
@@ -22,6 +23,7 @@ Node *criaNode(int ordem, bool ehFolha, int offset){
     node->ehFolha = ehFolha;
     node->qtdChaves = 0;
     node->offset = offset;
+    node->ordem = ordem;
 
     node->chaves = calloc(ordem-1, sizeof(int));
     node->registros = calloc(ordem-1, sizeof(int));
@@ -69,7 +71,7 @@ Node **getFilhosNode(Node *node) {
 
 int getOrdemNode(Node *node) {
     if (node == NULL) return -1;
-    return (sizeof(node->registros)/sizeof(int)) + 1;
+    return node->ordem;
 }
 
 void liberaNode(Node *node){
@@ -125,7 +127,7 @@ BT *criaBT(int ordem) {
 }
 
 void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) { 
-    int ordem = getOrdemNode(raizAntiga);
+    int ordem = getOrdemNode(raizAntiga)-1;
     bt->numNos++;
     Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga), bt->numNos);
    
