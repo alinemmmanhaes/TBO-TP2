@@ -191,6 +191,7 @@ void insereChaveRegistro(Node *n, int chave, int registro, int ind){
     n->registros[ind] = registro;
     n->qtdChaves++;
 }
+
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
    
@@ -246,23 +247,23 @@ static bool podeRemoverDoNode(Node *node) {
 }
 
 static int getMaiorRegistroFilhoEsquerda(Node *node) {
-    if (node == NULL) return -999666999;
+    if (node == NULL) return -1;
     return node->registros[getQtdChavesNode(node) - 1];
 }
 
 static int getMaiorChaveFilhoEsquerda(Node *node) {
-    if (node == NULL) return -999666999;
+    if (node == NULL) return -1;
     return node->chaves[getQtdChavesNode(node) - 1];
 }
 
 static int getMenorRegistroFilhoDireita(Node *node) {
-    if (node == NULL) return -999666999;
+    if (node == NULL) return -1;
 
     return node->registros[0];
 }
 
 static int getMenorChaveFilhoDireita(Node *node) {
-    if (node == NULL) return -999666999;
+    if (node == NULL) return -1;
 
     return node->chaves[0];
 }
@@ -275,15 +276,15 @@ void trocaConteudos(int *data_1, int *data_2) {
 
 void shiftLeft(Node *node) { }
 
-Node *removeBT(BT *bt, int chave) {
-    if (bt == NULL) return NULL;
+Node *removeBT(BT *bt, Node *pai, int chave) {
+    if (bt == NULL || pai == NULL) return NULL;
 
     /** Observações possíveis: Cada nó deve ter pelo menos (t/2) - 1 elementos */
     Node *node = buscaBT(bt->raiz, chave);
     int idxChave = getIdxChave(node, chave);
 
     /** ----- Caso 1 ----- */
-    /** Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
+    /** (A) Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
     if (ehFolhaNode(node) && podeRemoverDoNode(node)) {
         shiftLeft(node);
         node->qtdChaves--;
@@ -292,37 +293,30 @@ Node *removeBT(BT *bt, int chave) {
     }
 
     /** ----- Caso 2 ----- */
-    /**     condicao: chave esta em um nó interno
-     *      (A) Se o filho a esquerda do nó a remover com chave k tiver pelo menos t/2 elementos, 
-     * encontra o maior do filho a esquerda (k'), troca de lugar com k e remove k
-     * 
-     *      (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita
-     * 
-     *      (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro
-     */
-
-    /* (C) */
-    if (podeRemoverDoNode(node->filhos[idxChave]) && podeRemoverDoNode(node->filhos[idxChave+1])) {
-        shiftLeft(node);
-        Node *new = uneNode(node->filhos[idxChave], node->filhos[idxChave+1]);
-        /** tira do disco o nó "node" */
-        /** reescreve o node new no lugar do filho a esquerda da chave */
-
-    /* (A) */
-    } else if (podeRemoverDoNode(node->filhos[idxChave])) {
+    /* (A) Se o filho a esquerda do nó a remover com chave k tiver pelo menos t/2 elementos, 
+     * encontra o maior do filho a esquerda (k'), troca de lugar com k e remove k */
+    if (podeRemoverDoNode(node->filhos[idxChave])) {
         shiftLeft(node);
         int *registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
         trocaConteudos(registro, node->registros[idxChave]);
         trocaConteudos(chave, node->chaves[idxChave]);
         /** tira do disco o nó "node" */
-
-    /* (B) */
+        
+        /* (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita */
     } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
         shiftLeft(node);
         int *registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
         trocaConteudos(registro, node->registros[idxChave+1]);
         trocaConteudos(chave, node->chaves[idxChave+1]);
         /** tira do disco o nó "node" */
+    
+    /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
+    } else if (getQtdChavesNode(node->filhos[idxChave]) == getOrdemNode(node->filhos[idxChave])/2 - 1 && 
+              getQtdChavesNode(node->filhos[idxChave+1]) == getOrdemNode(node->filhos[idxChave+1])/2 - 1) {
+        shiftLeft(node);
+        Node *new = uneNode(node->filhos[idxChave], node->filhos[idxChave+1]);
+        /** tira do disco o nó "node" */
+        /** reescreve o node new no lugar do filho a esquerda da chave */
     }
 
     /** ----- Caso 3 ----- */
@@ -330,18 +324,37 @@ Node *removeBT(BT *bt, int chave) {
      *     (A) (distribuicao) se ci[x] possuir t/2 -1 elementos e possuir um irmao adj com pelo 
      * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
      * irmaos adjacentes
-     * 
+     */
+    /**
+     * if n[ci[x]] >= t/2 - 1 && n[ci-1[x]] >= t/2 -1:
+     *      bota oq ta em x em ci e re-ordena
+     *      promove alguem de ci-1 pra x
+     *  
+     * else if n[ci[x]] >= t/2 - 1 && n[ci+1[x]] >= t/2 -1:
+     *      bota oq ta em x em ci e re-ordena
+     *      promove alguem de ci+1 pra x
+     */
+
+    /** 
      *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
      *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
      */
+    /**
+     * if (ci[x] && ci-1[x] && ci+1[x] == t/2-1)
+     *      bota oq ta em x em ci
+     *      junta ci[x] com ci+1[x] ou ci-1[x]
+     */
     
-
-    
-
-
     return node;
 }
 
+/** 
+ * Tem algum problema na busca de algumas coisas 
+ * por exemplo, na arvore q vimos hoje (quinta) 
+ *      [75]
+ * [20]     [77, 78]
+ * nosso codigo n vai pro nó filho a direita
+ */
 Node *buscaBT(Node *node, int chave) {
     if(node == NULL) return NULL;
     int i = 0;

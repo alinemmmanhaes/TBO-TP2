@@ -8,7 +8,7 @@ BT *criaBT(int ordem);
 
 void insereBT(BT *bt, int chave, int registro);
 
-Node *removeBT(BT *bt, int chave);
+Node *removeBT(BT *bt, Node *pai, int chave);
 
 Node *buscaBT(Node *node, int chave);
 

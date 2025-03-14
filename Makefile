@@ -22,6 +22,4 @@ val:
 	./bt $(input) $(output)
 
 clean:
-	@ rm -f *.o
-	@ rm -f *.txt
-	@ rm -f bt
+	@ rm -f *.o BT main
