@@ -90,13 +90,21 @@ void liberaNode(Node *node){
 }
 
 void printNode(Node *node, FILE *arq){
-    if (node == NULL || arq == NULL) return;
+    if (node == NULL) return;
 
-    fprintf(arq, "[");
-    for(int i=0; i<node->qtdChaves; i++){
-        fprintf(arq, "key: %d, ", node->chaves[i]);
+    if(arq == NULL){
+        printf("[");
+        for(int i=0; i<node->qtdChaves; i++){
+            printf("key: %d, ", node->chaves[i]);
+        }
+        printf("]");
+    }else{
+        fprintf(arq, "[");
+        for(int i=0; i<node->qtdChaves; i++){
+            fprintf(arq, "key: %d, ", node->chaves[i]);
+        }
+        fprintf(arq, "]");
     }
-    fprintf(arq, "]");
 }
 
 //BT
@@ -408,33 +416,65 @@ Node *buscaBT(Node *node, int chave) {
 void printBT(BT* bt, FILE* arq){
     if(bt == NULL) return;
 
-    fprintf(arq, "\n-- ARVORE B\n");
-    //le bin
+    if(arq){
+        fprintf(arq, "\n-- ARVORE B\n");
+        //le bin
 
-    Fila* fila = criaFila();
-    insereFila(fila, bt->raiz);
+        Fila* fila = criaFila();
+        insereFila(fila, bt->raiz);
 
-    int n = 1; //numero de nodes na mesma linha de impressao
-    while(!filaVazia(fila)){
-        int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
+        int n = 1; //numero de nodes na mesma linha de impressao
+        while(!filaVazia(fila)){
+            int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
 
-        for(int j=0; j<n; j++){
-            Node* node = (Node*)removeFila(fila);
-            printNode(node, arq);
+            for(int j=0; j<n; j++){
+                Node* node = (Node*)removeFila(fila);
+                printNode(node, arq);
 
-            if(!ehFolhaNode(node)){
-                int tamanho = node->qtdChaves;
-                for(int i=0; i<=tamanho; i++) {
-                    insereFila(fila, node->filhos[i]);
+                if(!ehFolhaNode(node)){
+                    int tamanho = node->qtdChaves;
+                    for(int i=0; i<=tamanho; i++) {
+                        insereFila(fila, node->filhos[i]);
+                    }
+                    numNodesLinha += tamanho + 1;
                 }
-                numNodesLinha += tamanho + 1;
             }
-        }
 
-        n = numNodesLinha;
-        fprintf(arq, "\n");
+            n = numNodesLinha;
+            fprintf(arq, "\n");
+        }
+        liberaFila(fila);
+    }else{
+        printf("\n-- ARVORE B\n");
+        //le bin
+
+        Fila* fila = criaFila();
+        insereFila(fila, bt->raiz);
+
+        int n = 1; //numero de nodes na mesma linha de impressao
+        while(!filaVazia(fila)){
+            int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
+
+            for(int j=0; j<n; j++){
+                Node* node = (Node*)removeFila(fila);
+                printNode(node, NULL);
+
+                if(!ehFolhaNode(node)){
+                    int tamanho = node->qtdChaves;
+                    for(int i=0; i<=tamanho; i++) {
+                        insereFila(fila, node->filhos[i]);
+                    }
+                    numNodesLinha += tamanho + 1;
+                }
+            }
+
+            n = numNodesLinha;
+            printf("\n");
+        }
+        liberaFila(fila);
     }
-    liberaFila(fila);
+
+    
 }
 
 Node *getRaizBT(BT* bt) {
