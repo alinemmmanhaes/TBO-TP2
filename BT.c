@@ -119,7 +119,7 @@ BT *criaBT(int ordem) {
 void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) { 
     int ordem = getOrdemNode(raizAntiga);
     bt->numNos++;
-    Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga), getOffset(raizNova)+1);
+    Node *maiores = criaNode(ordem, ehFolhaNode(raizAntiga), bt->numNos);
    
     maiores->qtdChaves = ordem/2;
     int limite = ordem - ordem/2;
@@ -146,6 +146,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
     }
 
     raizNova->chaves[ind] = raizAntiga->chaves[limite-1];
+    raizNova->registros[ind] = raizAntiga->registros[limite-1];
     raizNova->qtdChaves++;
     /*
     diskWrite(raizAntiga);
@@ -162,10 +163,10 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
             raiz->chaves[i] = raiz->chaves[i-1];
             raiz->registros[i] = raiz->registros[i-1];
             i--;
-            raiz->chaves[i] = chave;
-            raiz->registros[i] = registro;     
+            //raiz->chaves[i] = chave;
+            //raiz->registros[i] = registro;     
         }
-       
+        //printf("%d ", chave);
         insereChaveRegistro(raiz, chave, registro, i);
         //raiz->qtdChaves++;
         //diskWrite(raiz);
@@ -175,7 +176,8 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
         i++;
         ///Node *filho = diskRead(raiz->filhos[i]);
         Node *filho = raiz->filhos[i-1];
-        if(getQtdChavesNode(filho) == (getOrdemNode(filho) - 1)){
+        
+        if(getQtdChavesNode(filho) == (bt->ordem - 1)){
             divideNode(raiz, i-1, filho, bt);
             if(chave > raiz->chaves[i-1]) i++;
 
@@ -194,7 +196,7 @@ void insereChaveRegistro(Node *n, int chave, int registro, int ind){
 
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
-   
+    //printf("%d ", chave);
     if(raiz == NULL){
         bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
@@ -210,7 +212,7 @@ void insereBT(BT *bt, int chave, int registro){
         novo->filhos[0] = raiz;
         divideNode(novo, 0, raiz, bt);
         insereSemDividir(novo, chave, registro, bt);
-        raiz = novo;
+        bt->raiz = novo;
 
     } else{
         insereSemDividir(raiz, chave, registro, bt);
