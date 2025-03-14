@@ -22,4 +22,4 @@ val:
 	./bt $(input) $(output)
 
 clean:
-	@ rm -f *.o BT main
+	@ rm -f *.o BT bt main

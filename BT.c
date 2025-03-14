@@ -269,7 +269,7 @@ static int getMenorChaveFilhoDireita(Node *node) {
 }
 
 void trocaConteudos(int *data_1, int *data_2) {
-    int *aux = *data_1;
+    int *aux = data_1;
     *data_1 = *data_2;
     *data_2 = *aux;
 }
@@ -297,17 +297,17 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
      * encontra o maior do filho a esquerda (k'), troca de lugar com k e remove k */
     if (podeRemoverDoNode(node->filhos[idxChave])) {
         shiftLeft(node);
-        int *registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
-        trocaConteudos(registro, node->registros[idxChave]);
-        trocaConteudos(chave, node->chaves[idxChave]);
+        int registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
+        trocaConteudos(&registro, &node->registros[idxChave]);
+        trocaConteudos(&chave, &node->chaves[idxChave]);
         /** tira do disco o nó "node" */
         
         /* (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita */
     } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
         shiftLeft(node);
-        int *registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
-        trocaConteudos(registro, node->registros[idxChave+1]);
-        trocaConteudos(chave, node->chaves[idxChave+1]);
+        int registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
+        trocaConteudos(&registro, &node->registros[idxChave+1]);
+        trocaConteudos(&chave, &node->chaves[idxChave+1]);
         /** tira do disco o nó "node" */
     
     /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
@@ -325,6 +325,19 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
      * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
      * irmaos adjacentes
      */
+    Node *left, *mid, *right;
+    int idx = 0;
+    for (idx = 0; idx < pai->qtdChaves; idx++) {
+        if (idx == 0) { left = mid = pai->filhos[idx]; }
+        else if (idx == pai->qtdChaves-1) { left = pai->filhos[idx-1]; mid = right = pai->filhos[idx]; }
+        else {
+            left = pai->filhos[idx-1];
+            mid = pai->filhos[idx];
+            right = pai->filhos[idx+1];
+            break;
+        }
+    }
+
     /**
      * if n[ci[x]] >= t/2 - 1 && n[ci-1[x]] >= t/2 -1:
      *      bota oq ta em x em ci e re-ordena
@@ -334,7 +347,22 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
      *      bota oq ta em x em ci e re-ordena
      *      promove alguem de ci+1 pra x
      */
+    // dúvida forte nos indices
+    // pro lado esquerdo
+    if (getQtdChavesNode(mid) >= (getOrdemBT(bt)/2 - 1) && getQtdChavesNode(left) >= (getOrdemBT(bt)/2 - 1)) {
+        trocaConteudos(&pai->chaves[idx], &mid->chaves[idxChave]);
+        trocaConteudos(&pai->registros[idx], &mid->registros[idxChave]);
+        // funcao p promover 
+        insereSemDividir(pai, chave, chave, bt); // funciona?
 
+    // pro lado direito
+    } else if (getQtdChavesNode(mid) >= (getOrdemBT(bt)/2 - 1) && getQtdChavesNode(left) >= (getOrdemBT(bt)/2 - 1)) {
+        trocaConteudos(&pai->chaves[idx], &mid->chaves[idxChave]);
+        trocaConteudos(&pai->registros[idx], &mid->registros[idxChave]);
+        // funcao p promover
+        insereSemDividir(pai, chave, chave, bt); // funciona?
+    }
+    
     /** 
      *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
      *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
@@ -344,7 +372,13 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
      *      bota oq ta em x em ci
      *      junta ci[x] com ci+1[x] ou ci-1[x]
      */
-    
+
+    if (getQtdChavesNode(left) == getQtdChavesNode(mid) == getQtdChavesNode(right) == (getOrdemBT(bt)/2 - 1) ) {
+            trocaConteudos(&pai->chaves[idx], &mid->chaves[getQtdChavesNode(mid)-1]); // esses indices estao certos?
+            trocaConteudos(&pai->registros[idx], &mid->registros[getQtdChavesNode(mid)-1]);
+            uneNode(left, mid);
+    }
+
     return node;
 }
 

@@ -1,6 +1,0 @@
-
--- ARVORE B
-[key: 20, ]
-
--- ARVORE B
-[key: 20, ]
