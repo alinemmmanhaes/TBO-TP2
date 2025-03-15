@@ -235,7 +235,7 @@ void insereBT(BT *bt, int chave, int registro){
 static Node *uneNode(Node *n1, Node *n2) {
     /** os indices estao certos? */
     for(int i = 0; i < getQtdChavesNode(n2); i++) {
-        n1->chaves[getQtdChavesNode(n1)] = n2->chaves[i];
+        n1->chaves[getQtdChavesNode(n1)] = n2->chaves[i]; //N1->GETCHAVES + i
         n1->registros[getQtdChavesNode(n1)] = n2->chaves[i];
         n1->filhos[getQtdChavesNode(n1)] = n2->filhos[i];
         n1->qtdChaves++;
@@ -255,13 +255,14 @@ static int getIdxChave(Node *node, int chave) {
 static bool podeRemoverDoNode(Node *node) {
     if (node == NULL) return false;
 
-    if (node->qtdChaves >= getOrdemNode(node)/2 - 1) return true;
+    if (node->qtdChaves >= getOrdemNode(node)/2 - 1) return true; //QTDCHAVES - 1 >= (t - (t/2)) - 1
     return false;
 }
 
+//SUGESTÃO NOME DA FUNÇÃO: getMaiorRegistro
 static int getMaiorRegistroFilhoEsquerda(Node *node) {
     if (node == NULL) return -1;
-    return node->registros[getQtdChavesNode(node) - 1];
+    return node->registros[getQtdChavesNode(node) - 1]; 
 }
 
 static int getMaiorChaveFilhoEsquerda(Node *node) {
@@ -289,6 +290,7 @@ void trocaConteudos(int *data_1, int *data_2) {
 
 void shiftLeft(Node *node) { }
 
+//SUGESTÃO: REDIVIDIR A FUNÇÃO EM 3 GRANDES IFS (UM PRA CADA CASO) E IFS INTERNOS, SE NECESSARIO
 Node *removeBT(BT *bt, Node *pai, int chave) {
     if (bt == NULL || pai == NULL) return NULL;
 
@@ -299,7 +301,7 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
     /** ----- Caso 1 ----- */
     /** (A) Chave é na folha e a folha tem um minimo de (t/2)-1 chaves, */
     if (ehFolhaNode(node) && podeRemoverDoNode(node)) {
-        shiftLeft(node);
+        shiftLeft(node); //FALTA REMOVER A CHAVE REALMENTE
         node->qtdChaves--;
         /** tira do disco o nó "node" */
         return node;
@@ -308,29 +310,30 @@ Node *removeBT(BT *bt, Node *pai, int chave) {
     /** ----- Caso 2 ----- */
     /* (A) Se o filho a esquerda do nó a remover com chave k tiver pelo menos t/2 elementos, 
      * encontra o maior do filho a esquerda (k'), troca de lugar com k e remove k */
-    if (podeRemoverDoNode(node->filhos[idxChave])) {
+    if (podeRemoverDoNode(node->filhos[idxChave])) { //CONFIRMAR SE NÃO É FOLHA
         shiftLeft(node);
-        int registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);
-        trocaConteudos(&registro, &node->registros[idxChave]);
-        trocaConteudos(&chave, &node->chaves[idxChave]);
+        int registro = getMaiorRegistroFilhoEsquerda(node->filhos[idxChave+1]);//IDXCHAVE, SEM O +1
+        trocaConteudos(&registro, &node->registros[idxChave]); //DECREMENTAR QTDCHAVES FILHO
+        trocaConteudos(&chave, &node->chaves[idxChave]); //FALTOU PEGAR A MAIOR CHAVE DO FILHO
         /** tira do disco o nó "node" */
         
         /* (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita */
     } else if (podeRemoverDoNode(node->filhos[idxChave+1])) {
         shiftLeft(node);
-        int registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]);
+        int registro = getMenorRegistroFilhoDireita(node->filhos[idxChave+1]); //DAR SHIFTLEFT NO FILHO DA DIREITA
         trocaConteudos(&registro, &node->registros[idxChave+1]);
         trocaConteudos(&chave, &node->chaves[idxChave+1]);
         /** tira do disco o nó "node" */
     
     /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
     } else if (getQtdChavesNode(node->filhos[idxChave]) == getOrdemNode(node->filhos[idxChave])/2 - 1 && 
-              getQtdChavesNode(node->filhos[idxChave+1]) == getOrdemNode(node->filhos[idxChave+1])/2 - 1) {
+              getQtdChavesNode(node->filhos[idxChave+1]) == getOrdemNode(node->filhos[idxChave+1])/2 - 1) {//TALVEZ SEJA(t - t/2) -1 OU (QTDCHAVES ESQ + QTDCHAVES DIR <= ORDEM-1)
         shiftLeft(node);
         Node *new = uneNode(node->filhos[idxChave], node->filhos[idxChave+1]);
         /** tira do disco o nó "node" */
         /** reescreve o node new no lugar do filho a esquerda da chave */
     }
+    //RETURN? (Se a sugestão antes da função for feita, não precisa disso)
 
     /** ----- Caso 3 ----- */
     /**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
