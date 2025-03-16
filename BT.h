@@ -1,16 +1,20 @@
 #ifndef _BT_H_
 #define _BT_H_
 
+
 typedef struct BT BT;
 typedef struct Node Node;
+
+#define NODE_CHAVE 0
+#define NODE_PAI 1
 
 BT *criaBT(int ordem);
 
 void insereBT(BT *bt, int chave, int registro);
 
-Node *removeBT(BT *bt, Node *pai, int chave);
+void removeBT(BT *bt, int chave);
 
-Node *buscaBT(Node *node, int chave);
+Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA);
 
 void printBT(BT* bt, FILE* arq);
 

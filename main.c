@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]){
     sprintf(in, "%s", argv[1]);
     sprintf(out, "%s", argv[2]);
 */
-    FILE* fIn = fopen("caso_teste_5.txt", "r");
+    FILE* fIn = fopen("debug.txt", "r");
     if(fIn == NULL){
         printf("Erro na criação do arquivo de entrada\n");
         return 1;
@@ -35,17 +35,17 @@ int main(int argc, char const *argv[]){
     for(int i=0; i<nOperacoes; i++){
         fscanf(fIn, "%c ", &c);
 
-        if(c == 'I'){
+        if(c == 'I') {
             fscanf(fIn, "%d, %d%*c", &chave, &registro);
             insereBT(bt, chave, registro);
 
-        } else if(c == 'R'){
+        } else if(c == 'R') {
             fscanf(fIn, "%d%*c", &chave);
-            removeBT(bt, getRaizBT(bt), chave);
+            removeBT(bt, chave);
 
-        } else if(c == 'B'){
+        } else if(c == 'B') {
             fscanf(fIn, "%d%*c", &chave);
-            if(buscaBT(getRaizBT(bt), chave)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
+            if(buscaBT(getRaizBT(bt), NULL, chave, NODE_CHAVE)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
             else fprintf(fOut, "O REGISTRO NAO ESTA NA ARVORE!\n");
         }
     }
