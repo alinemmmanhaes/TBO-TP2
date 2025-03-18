@@ -175,13 +175,9 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
         while(i>=1 && (chave < raiz->chaves[i-1])){
             raiz->chaves[i] = raiz->chaves[i-1];
             raiz->registros[i] = raiz->registros[i-1];
-            i--;
-            //raiz->chaves[i] = chave;
-            //raiz->registros[i] = registro;     
+            i--;     
         }
-        //printf("%d ", chave);
         insereChaveRegistro(raiz, chave, registro, i);
-        //raiz->qtdChaves++;
         //diskWrite(raiz);
 
     }else{
@@ -189,12 +185,7 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
         i++;
         ///Node *filho = diskRead(raiz->filhos[i]);
         Node *filho = raiz->filhos[i-1];
-       
-        // if(getQtdChavesNode(filho) == (bt->ordem - 1)){
-        //     divideNode(raiz, i-1, filho, bt);
-        //     if(chave > raiz->chaves[i-1]) i++;
 
-        // }
         insereSemDividir(filho, chave, registro, bt); 
         if(getQtdChavesNode(filho)==getOrdemBT(bt))
             divideNode(raiz, i-1,filho, bt);
@@ -228,7 +219,6 @@ void insereBT(BT *bt, int chave, int registro){
         novo->filhos[0] = raiz;
         bt->raiz = novo;
         divideNode(novo, 0, raiz, bt);
-        // insereSemDividir(novo, chave, registro, bt);
     }
     // escreve no bin
 }
@@ -352,8 +342,8 @@ static bool remocaoCaso2(Node *node, int chave, int idxChave) {
         return true;
     
     /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
-    } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) <= ordem-1 ) {//TALVEZ SEJA(t - t/2) -1 OU (QTDCHAVES ESQ + QTDCHAVES DIR <= ORDEM-1)
-        shift(node, chave, idxChave);                                                             // coloquei ordem-1 pq nao sei se estar cheio é uma condicao, imaginei q s
+    } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) <= ordem-1 ) {
+        shift(node, chave, idxChave);
         Node *old = uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA]);
         shiftFilhos(node, idxChave+1);
         node->qtdChaves--;
@@ -377,20 +367,21 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
     // encontra o indice do pai q mapeia o filho
     int i = 0;
     for (i = 0; i < getQtdChavesNode(pai) && pai->chaves[i] < chave; i++) { }
-    int idx = i - 1;
+    int idxPai = i - 1;
 
     Node *left, *mid, *right;
-    if (idx == 0) {
-        left = mid = pai->filhos[idx];
+    if (idxPai == 0) {
+        left = mid = pai->filhos[idxPai];
+        right = pai->filhos[idxPai];
 
-    } else if (idx == pai->qtdChaves-1) { 
-        left = pai->filhos[idx-1]; 
-        mid = right = pai->filhos[idx];
+    } else if (idxPai == pai->qtdChaves-1) { 
+        left = pai->filhos[idxPai-1]; 
+        mid = right = pai->filhos[idxPai];
 
     } else {
-        left = pai->filhos[idx-1];
-        mid = pai->filhos[idx];
-        right = pai->filhos[idx+1];
+        left = pai->filhos[idxPai-1];
+        mid = pai->filhos[idxPai];
+        right = pai->filhos[idxPai+1];
     }
 
     /**
@@ -404,19 +395,31 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
      */
 
     // pro lado esquerdo
-    if (getQtdChavesNode(mid) >= (getOrdemBT(bt)/2 - 1) && getQtdChavesNode(left) >= (getOrdemBT(bt)/2 - 1)) {
-        trocaConteudos(&pai->chaves[idx], &mid->chaves[idxChave]);
-        trocaConteudos(&pai->registros[idx], &mid->registros[idxChave]);
-        // funcao p promover 
-        insereSemDividir(pai, chave, chave, bt); // funciona?
+    int ordem = getOrdemBT(bt);
+    if (mid != left && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(left) >= (ordem - ordem/2)) {
+        trocaConteudos(&pai->chaves[idxPai], &mid->chaves[idxChave]);
+        trocaConteudos(&pai->registros[idxPai], &mid->registros[idxChave]);
+
+        int registro_troca = getMaiorRegistro(left);
+        int chave_troca = getMaiorChave(left);
+        pai->registros[idxPai] = registro_troca;
+        pai->chaves[idxPai] = chave_troca;
+        left->qtdChaves--;
+
         return true;
 
     // pro lado direito
-    } else if (getQtdChavesNode(mid) >= (getOrdemBT(bt)/2 - 1) && getQtdChavesNode(right) >= (getOrdemBT(bt)/2 - 1)) {
-        trocaConteudos(&pai->chaves[idx], &mid->chaves[idxChave]);
-        trocaConteudos(&pai->registros[idx], &mid->registros[idxChave]);
-        // funcao p promover
-        insereSemDividir(pai, chave, chave, bt); // funciona?
+    } else if (mid != right && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(right) >= (ordem - ordem/2)) {
+        trocaConteudos(&pai->chaves[idxPai+1], &mid->chaves[idxChave]);
+        trocaConteudos(&pai->registros[idxPai+1], &mid->registros[idxChave]);
+        
+        int registro_troca = getMenorRegistro(right);
+        int chave_troca = getMenorChave(right);
+        pai->registros[idxPai+1] = registro_troca;
+        pai->chaves[idxPai+1] = chave_troca;
+        shift(right, chave_troca, 0);
+        right->qtdChaves--;
+
         return true;
     }
     
@@ -430,9 +433,9 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
      *      junta ci[x] com ci+1[x] ou ci-1[x]
      */
 
-    if (getQtdChavesNode(left) == getQtdChavesNode(mid) == getQtdChavesNode(right) == (getOrdemBT(bt)/2 - 1) ) {
-        trocaConteudos(&pai->chaves[idx], &mid->chaves[getQtdChavesNode(mid)-1]); // esses indices estao certos?
-        trocaConteudos(&pai->registros[idx], &mid->registros[getQtdChavesNode(mid)-1]);
+    if (getQtdChavesNode(left) == getQtdChavesNode(mid) == getQtdChavesNode(right) == (ordem - ordem/2 - 1) ) {
+        trocaConteudos(&pai->chaves[idxPai], &mid->chaves[getQtdChavesNode(mid)-1]); // esses indices estao certos?
+        trocaConteudos(&pai->registros[idxPai], &mid->registros[getQtdChavesNode(mid)-1]);
         uneNode(left, mid);
         return true;
     }
