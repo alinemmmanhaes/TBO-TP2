@@ -100,7 +100,8 @@ void printNode(Node *node, FILE *arq){
             printf("key: %d, ", node->chaves[i]);
         }
         printf("]");
-    }else{
+
+    } else {
         fprintf(arq, "[");
         for(int i=0; i<node->qtdChaves; i++){
             fprintf(arq, "key: %d, ", node->chaves[i]);
@@ -274,7 +275,7 @@ static int getMenorChave(Node *node) {
     return node->chaves[0];
 }
 
-void trocaConteudos(int *data_1, int *data_2) {
+static void trocaConteudos(int *data_1, int *data_2) {
     if (data_1 == NULL || data_2 == NULL) return;
     int aux = *data_1;
     *data_1 = *data_2;
@@ -296,6 +297,16 @@ void shiftFilhos(Node *node, int idxChave){
     for(int i=idxChave; i<getQtdChavesNode(node); i++){
         node->filhos[idxChave] = node->filhos[idxChave+1];
     }
+}
+
+static void insereNode(Node *node, int chave, int registro) { 
+    int i = 0;
+    while(i>=1 && (chave < node->chaves[i-1])){
+        node->chaves[i] = node->chaves[i-1];
+        node->registros[i] = node->registros[i-1];
+        i--;
+    }
+    insereChaveRegistro(node, chave, registro, i);
 }
 
 /** ----- Caso 1 ----- */
@@ -398,9 +409,11 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
     // pro lado esquerdo
     int ordem = getOrdemBT(bt);
     if (mid != left && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(left) >= (ordem - ordem/2)) {
-        trocaConteudos(&pai->chaves[idxPai], &mid->chaves[idxChave]);
-        trocaConteudos(&pai->registros[idxPai], &mid->registros[idxChave]);
+        insereNode(mid, chave, mid->registros[idxChave]);
+        // trocaConteudos(&pai->chaves[idxPai], &mid->chaves[idxChave]);
+        // trocaConteudos(&pai->registros[idxPai], &mid->registros[idxChave]);
 
+        /** promocao */
         int registro_troca = getMaiorRegistro(left);
         int chave_troca = getMaiorChave(left);
         pai->registros[idxPai] = registro_troca;
@@ -411,9 +424,11 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
 
     // pro lado direito
     } else if (mid != right && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(right) >= (ordem - ordem/2)) {
-        trocaConteudos(&pai->chaves[idxPai+1], &mid->chaves[idxChave]);
-        trocaConteudos(&pai->registros[idxPai+1], &mid->registros[idxChave]);
+        insereNode(mid, chave, mid->registros[idxChave]);
+        // trocaConteudos(&pai->chaves[idxPai+1], &mid->chaves[idxChave]);
+        // trocaConteudos(&pai->registros[idxPai+1], &mid->registros[idxChave]);
         
+        /** promove */
         int registro_troca = getMenorRegistro(right);
         int chave_troca = getMenorChave(right);
         pai->registros[idxPai+1] = registro_troca;
@@ -512,15 +527,15 @@ void printBT(BT* bt, FILE* arq){
         insereFila(fila, bt->raiz);
 
         int n = 1; //numero de nodes na mesma linha de impressao
-        while(!filaVazia(fila)){
+        while (!filaVazia(fila)) {
             int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
-            for(int j=0; j<n; j++){
-                Node* node = (Node*)removeFila(fila);
-                printNode(node, arq);
+            for(int j = 0; j < n ; j++) {
+                Node* node = (Node*) removeFila(fila);
+                if (node) printNode(node, arq);
 
-                if(!ehFolhaNode(node)){
+                if(!ehFolhaNode(node)) {
                     int tamanho = node->qtdChaves;
-                    for(int i=0; i<=tamanho; i++) {
+                    for(int i=0; i <= tamanho; i++) {
                         insereFila(fila, node->filhos[i]);
                     }
                     numNodesLinha += tamanho + 1;
@@ -536,7 +551,7 @@ void printBT(BT* bt, FILE* arq){
     } else {
         printf("\n-- ARVORE B\n");
         //le bin
-
+        
         Fila* fila = criaFila();
         insereFila(fila, bt->raiz);
 
@@ -544,13 +559,13 @@ void printBT(BT* bt, FILE* arq){
         while (!filaVazia(fila)){
             int numNodesLinha = 0; //numero de nodes na mesma linha de impressao
 
-            for (int j=0; j<n; j++){
+            for (int j = 0; j < n; j++){
                 Node* node = (Node*)removeFila(fila);
                 printNode(node, NULL);
 
                 if (!ehFolhaNode(node)){
                     int tamanho = node->qtdChaves;
-                    for(int i=0; i<=tamanho; i++) {
+                    for(int i=0; i <= tamanho; i++) {
                         insereFila(fila, node->filhos[i]);
                     }
 
