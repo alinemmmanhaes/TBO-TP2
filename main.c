@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]){
     sprintf(in, "%s", argv[1]);
     sprintf(out, "%s", argv[2]);
 */
-    FILE* fIn = fopen("debug.txt", "r");
+    FILE* fIn = fopen("teste.txt", "r");
     if(fIn == NULL){
         printf("Erro na criação do arquivo de entrada\n");
         return 1;

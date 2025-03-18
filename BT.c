@@ -236,13 +236,14 @@ void insereBT(BT *bt, int chave, int registro){
 static Node *uneNode(Node *n1, Node *n2) {
     /** os indices estao certos? */
     for(int i = 0; i < getQtdChavesNode(n2); i++) {
-        n1->chaves[getQtdChavesNode(n1)] = n2->chaves[i];
-        n1->registros[getQtdChavesNode(n1)] = n2->chaves[i];
-        n1->filhos[getQtdChavesNode(n1)] = n2->filhos[i];
+        n1->chaves[getQtdChavesNode(n1)+i] = n2->chaves[i];
+        n1->registros[getQtdChavesNode(n1)+i] = n2->registros[i];
+        //n1->filhos[getQtdChavesNode(n1)] = n2->filhos[i];
         n1->qtdChaves++;
     }
 
-    liberaNode(n2); /** precisa liberar? ou é certo liberar? */
+    //liberaNode(n2); /** precisa liberar? ou é certo liberar? */
+    return n2;
 }
 
 static int getIdxChave(Node *node, int chave) {
@@ -294,9 +295,15 @@ static void shift(Node *node, int chave, int idxChave) {
 
     if (idxChave == node->qtdChaves-1) return;
 
-    for(int i = idxChave; i < node->qtdChaves; i++) {
+    for(int i = idxChave; i < node->qtdChaves-1; i++) {
         trocaConteudos(&node->chaves[i],    &node->chaves[i+1]);
         trocaConteudos(&node->registros[i], &node->registros[i+1]);
+    }
+}
+
+void shiftFilhos(Node *node, int idxChave){
+    for(int i=idxChave; i<getQtdChavesNode(node); i++){
+        node->filhos[idxChave] = node->filhos[idxChave+1];
     }
 }
 
@@ -306,7 +313,7 @@ static bool remocaoCaso1(Node *node, int chave, int idxChave) {
     if (node == NULL || chave < 0) return false;
 
     if (ehFolhaNode(node) && podeRemoverDoNode(node)) {
-        shift(node, chave, idxChave); //FALTA REMOVER A CHAVE REALMENTE
+        shift(node, chave, idxChave);
         node->qtdChaves--;
         /** tira do disco o nó "node" */
         return true;
@@ -320,36 +327,37 @@ static bool remocaoCaso1(Node *node, int chave, int idxChave) {
 static bool remocaoCaso2(Node *node, int chave, int idxChave) {
     if (node == NULL || chave < 0 || idxChave < 0) return false;
 
-    if (ehFolhaNode(node) == true) return false; //CONFIRMAR SE NÃO É FOLHA
+    if (ehFolhaNode(node) == true) return false;
 
     int ordem = getOrdemNode(node);
-    int DIREITA = DIREITA, ESQUERDA  = idxChave;
+    int DIREITA = idxChave+1, ESQUERDA  = idxChave;
     if (podeRemoverDoNode(node->filhos[ESQUERDA])) {
-        shift(node, chave, ESQUERDA);
         int registro_troca = getMaiorRegistro(node->filhos[ESQUERDA]);
         int chave_troca = getMaiorChave(node->filhos[ESQUERDA]);
-        trocaConteudos(&registro_troca, &node->registros[ESQUERDA]); //DECREMENTAR QTDCHAVES FILHO
-        trocaConteudos(&chave_troca,    &node->chaves[ESQUERDA]); //FALTOU PEGAR A MAIOR CHAVE DO FILHO
+        trocaConteudos(&registro_troca, &node->registros[idxChave]);
+        trocaConteudos(&chave_troca,    &node->chaves[idxChave]);
         /** tira do disco o nó "node" */
         node->filhos[ESQUERDA]->qtdChaves--;
         return true;
         
         /* (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita */
     } else if (podeRemoverDoNode(node->filhos[DIREITA])) {
-        shift(node, chave, DIREITA);
-        int registro_troca = getMenorRegistro(node->filhos[DIREITA]); //DAR shift NO FILHO DA DIREITA
+        int registro_troca = getMenorRegistro(node->filhos[DIREITA]);
         int chave_troca = getMenorChave(node->filhos[DIREITA]);
-        trocaConteudos(&registro_troca, &node->registros[DIREITA]);
-        trocaConteudos(&chave_troca, &node->chaves[DIREITA]);
-        shift(node->filhos[DIREITA], chave, DIREITA); // n sei se passei os argumentos certos nessa funcao
+        trocaConteudos(&registro_troca, &node->registros[idxChave]);
+        trocaConteudos(&chave_troca, &node->chaves[idxChave]);
+        shift(node->filhos[DIREITA], chave_troca, 0);
         /** tira do disco o nó "node" */
         node->filhos[DIREITA]->qtdChaves--;
         return true;
     
     /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
-    } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) == ordem-1 ) {//TALVEZ SEJA(t - t/2) -1 OU (QTDCHAVES ESQ + QTDCHAVES DIR <= ORDEM-1)
-        shift(node, chave, ESQUERDA);                                                             // coloquei ordem-1 pq nao sei se estar cheio é uma condicao, imaginei q s
-        Node *new = uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA]);
+    } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) <= ordem-1 ) {//TALVEZ SEJA(t - t/2) -1 OU (QTDCHAVES ESQ + QTDCHAVES DIR <= ORDEM-1)
+        shift(node, chave, idxChave);                                                             // coloquei ordem-1 pq nao sei se estar cheio é uma condicao, imaginei q s
+        Node *old = uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA]);
+        shiftFilhos(node, idxChave+1);
+        node->qtdChaves--;
+        liberaNode(old);
         /** tira do disco o nó "node" */
         /** reescreve o node new no lugar do filho a esquerda da chave */
         return true;
@@ -453,7 +461,7 @@ Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
         case NODE_CHAVE:
             if(i < node->qtdChaves && chave == node->chaves[i]) return node;
             else if(ehFolhaNode(node)) return NULL;
-            else {
+            else{
                 //diskRead(node->filhos[i]);
                 return buscaBT(node->filhos[i], node, chave, NODE_CHAVE);
             }
@@ -461,11 +469,10 @@ Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
         case NODE_PAI:
             if(i < node->qtdChaves && chave == node->chaves[i]) return pai;
             else if(ehFolhaNode(node)) return NULL;
-            else {
+            else{
                 //diskRead(node->filhos[i]);
                 return buscaBT(node->filhos[i], node, chave, NODE_PAI);
-        }
-        
+            }
     }
 }
 
