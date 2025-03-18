@@ -19,7 +19,10 @@ run:
 
 val:
 	clear
-	./bt $(input) $(output)
+	make comp
+	valgrind ./bt $(input) $(output)
+
+## valgrind --leak-check=full --show-leak-kinds=all
 
 clean:
 	@ rm -f *.o BT bt main

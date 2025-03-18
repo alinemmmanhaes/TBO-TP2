@@ -82,7 +82,7 @@ void liberaNode(Node *node){
     free(node->offsetFilhos);
 
     if (!ehFolhaNode(node)){
-        for(int i=0; i<node->qtdChaves; i++){
+        for(int i = 0; i <= node->qtdChaves; i++){
             liberaNode(node->filhos[i]);
         }
     }
@@ -137,7 +137,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
     int limite = indSplit + 1;
 
     for(int j = 0; j < getQtdChavesNode(maiores); j++){
-        maiores->chaves[j] = raizAntiga->chaves[j+limite]; //index j+ordem?
+        maiores->chaves[j] = raizAntiga->chaves[j+limite];
         maiores->registros[j] = raizAntiga->registros[j+limite];
     }
 
@@ -151,9 +151,9 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
     for(int k = raizNova->qtdChaves+1; k >= ind+1; k--){
         raizNova->filhos[k] = raizNova->filhos[k-1];
     }
-    raizNova->filhos[ind+1] = maiores; //c_{i+1}[x] <- z
+    raizNova->filhos[ind+1] = maiores;
 
-    for(int l = raizNova->qtdChaves; l > ind; l--){ //>= ind 
+    for(int l = raizNova->qtdChaves; l > ind; l--){
         raizNova->chaves[l] = raizNova->chaves[l-1];
         raizNova->registros[l] = raizNova->registros[l-1];
     }
@@ -161,6 +161,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
     raizNova->chaves[ind] = raizAntiga->chaves[limite-1];
     raizNova->registros[ind] = raizAntiga->registros[limite-1];
     raizNova->qtdChaves++;
+
     /*
     diskWrite(raizAntiga);
     diskWrite(maiores);
