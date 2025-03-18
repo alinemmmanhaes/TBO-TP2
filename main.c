@@ -50,7 +50,7 @@ int main(int argc, char const *argv[]){
         }
     }
 
-    printBT(bt, fOut);
+    // printBT(bt, fOut);
 
     liberaBT(bt);
     fclose(fIn);
