@@ -109,7 +109,13 @@ void printNode(Node *node, FILE *arq){
         fprintf(arq, "]");
     }
 }
-
+static int getIdxChave(Node *node, int chave) {
+    if (node == NULL) return -1;
+    for(int i = 0; i < node->qtdChaves; i++) {
+        if (node->chaves[i] == chave) return i;
+    }
+    return -1;
+}
 //BT
 struct BT {
     int     ordem, numNos;
@@ -213,6 +219,14 @@ void insereBT(BT *bt, int chave, int registro){
         return;
     }
 
+    Node *busca = buscaBT(raiz, NULL, chave, NODE_CHAVE);
+    if(busca != NULL){
+        int idx = getIdxChave(busca,chave);
+        busca->registros[idx] = registro;
+        //diskwrite(busca);
+        return;
+    }
+
     insereSemDividir(raiz, chave, registro, bt);
     if((bt->ordem) == raiz->qtdChaves ){ 
         bt->numNos++;
@@ -238,13 +252,7 @@ static Node *uneNode(Node *n1, Node *n2) {
     return n2;
 }
 
-static int getIdxChave(Node *node, int chave) {
-    if (node == NULL) return -1;
-    for(int i = 0; i < node->qtdChaves; i++) {
-        if (node->chaves[i] == chave) return i;
-    }
-    return -1;
-}
+
 
 static bool podeRemoverDoNode(Node *node) {
     if (node == NULL) return false;
