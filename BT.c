@@ -471,8 +471,11 @@ void removeBT(BT *bt, int chave) {
     /** Observações possíveis: Cada nó deve ter pelo menos (t/2) - 1 elementos */
     Node *pai = buscaBT(bt->raiz, NULL, chave, NODE_PAI);
     Node *node = buscaBT(bt->raiz, pai, chave, NODE_CHAVE);
-    int idxChave = getIdxChave(node, chave);
 
+    // não existe nó com a chave requisitada
+    if (node == NULL) return;
+
+    int idxChave = getIdxChave(node, chave);
     if (remocaoCaso1(node, chave, idxChave));
     else if (remocaoCaso2(node, chave, idxChave));
     else remocaoCaso3(bt, pai, chave, idxChave);
