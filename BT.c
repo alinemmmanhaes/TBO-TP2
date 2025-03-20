@@ -5,6 +5,8 @@
 #include "BT.h"
 #include "fila.h"
 
+void removeNode(Node *node, Node *pai, int chave);
+
 //Node
 struct Node {
     bool    ehFolha;
@@ -139,7 +141,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
 
     Node *maiores = criaNode(ordem+1, ehFolhaNode(raizAntiga), bt->numNos);
 
-    int indSplit = (ordem-1)/2;
+    int indSplit = (ordem-1) - ((ordem-1)/2);
     maiores->qtdChaves = getQtdChavesNode(raizAntiga) - indSplit - 1;
     int limite = indSplit + 1;
 
@@ -239,7 +241,7 @@ void insereBT(BT *bt, int chave, int registro){
     // escreve no bin
 }
 
-static void uneNode(Node *n1, Node *n2, int chave, int registro) {
+static Node *uneNode(Node *n1, Node *n2, int chave, int registro) {
     int qtdChavesN1 = getQtdChavesNode(n1), qtdChavesN2 = getQtdChavesNode(n2);
     n1->chaves[qtdChavesN1] = chave;
     n1->registros[qtdChavesN1] = registro;
@@ -255,6 +257,7 @@ static void uneNode(Node *n1, Node *n2, int chave, int registro) {
     }
 
     n1->qtdChaves += n2->qtdChaves+1;
+    return n2;
 }
 
 
@@ -307,7 +310,7 @@ static void shift(Node *node, int chave, int idxChave) {
 
 static void shiftFilhos(Node *node, int idxChave){
     for(int i = idxChave; i < getQtdChavesNode(node); i++){
-        node->filhos[idxChave] = node->filhos[idxChave+1];
+        node->filhos[i] = node->filhos[i+1];
     }
 }
 
@@ -383,10 +386,10 @@ static void remocaoCaso2(Node *node, int chave, int idxChave) {
     } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) <= ordem-1 ) {
         int registro = node->registros[idxChave];
         shift(node, chave, idxChave);
-        uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA], chave, registro);
+        Node *old = uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA], chave, registro);
         shiftFilhos(node, idxChave+1);
         node->qtdChaves--;
-        liberaNode(node->filhos[DIREITA]);
+        liberaNode(old);
         /** tira do disco o nó "node" */
         /** reescreve o node new no lugar do filho a esquerda da chave */
         removeNode(node->filhos[ESQUERDA], node, chave);
@@ -493,7 +496,7 @@ void removeBT(BT *bt, int chave) {
 }
 
 static Node *preenche(Node *pai, int chave, int idxChave) {
-    if (pai == NULL || chave < 0 || idxChave < 0) return;
+    if (pai == NULL || chave < 0 || idxChave < 0) return NULL;
 
     // encontra o indice do pai q mapeia o filho
     int i = 0, rodou = 0, idxPai = 0;
@@ -555,10 +558,10 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
             int registroPai = pai->registros[idxPai];
             int chavePai = pai->chaves[idxPai];
             shift(pai, chavePai, idxPai);
-            uneNode(mid, right, chavePai, registroPai);
+            Node *old = uneNode(mid, right, chavePai, registroPai);
             shiftFilhos(pai, idxPai+1);
             pai->qtdChaves--;
-            liberaNode(right);
+            liberaNode(old);
             /** tira do disco o nó "node" */
             /** reescreve o node new no lugar do filho a esquerda da chave */
             return mid;
@@ -567,10 +570,10 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
             int registroPai = pai->registros[idxPai-1];
             int chavePai = pai->chaves[idxPai-1];
             shift(pai, chavePai, idxPai-1);
-            uneNode(left, mid, chavePai, registroPai);
+            Node *old = uneNode(left, mid, chavePai, registroPai);
             shiftFilhos(pai, idxPai);
             pai->qtdChaves--;
-            liberaNode(mid);
+            liberaNode(old);
             /** tira do disco o nó "node" */
             /** reescreve o node new no lugar do filho a esquerda da chave */
             return left;
@@ -582,15 +585,16 @@ void removeNode(Node *node, Node *pai, int chave) {
     if (node == NULL || chave < 0) return;
 
     int idxChave = getIdxChave(node, chave);
-    if (podeRemoverDoNode(node) == false)
+    if (podeRemoverDoNode(node) == false) {
         node = preenche(pai, chave, idxChave);
         idxChave = getIdxChave(node, chave);
+    }
 
-    if (ehFolhaNode(node)) 
+    if (ehFolhaNode(node)) {
         remocaoCaso1(node, chave, idxChave);
-
-    else remocaoCaso2(node, chave, idxChave);
-    // else remocaoCaso3(bt, pai, chave, idxChave);
+    } else {
+        remocaoCaso2(node, chave, idxChave);
+    }
 }
 
 Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
