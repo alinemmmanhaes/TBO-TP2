@@ -15,7 +15,7 @@ comp:
 
 run:
 	clear
-	./bt  $(input) $(output)
+	@ ./bt  $(input) $(output)
 
 val:
 	clear
