@@ -19,6 +19,7 @@ int main(int argc, char const *argv[]){
     }
 
     FILE* fOut = fopen("saida.txt", "w");
+    FILE *fBin = fopen("escrita.txt", "w+b");
     if(fOut == NULL){
         printf("Erro na criação do arquivo de saída\n");
         return 1;
@@ -37,15 +38,15 @@ int main(int argc, char const *argv[]){
 
         if(c == 'I') {
             fscanf(fIn, "%d, %d%*c", &chave, &registro);
-            insereBT(bt, chave, registro);
+            insereBT(bt, chave, registro, fBin);
 
         } else if(c == 'R') {
             fscanf(fIn, "%d%*c", &chave);
-            removeBT(bt, chave);
+            removeBT(bt, chave, fBin);
 
         } else if(c == 'B') {
             fscanf(fIn, "%d%*c", &chave);
-            if(buscaBT(getRaizBT(bt), NULL, chave, NODE_CHAVE)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
+            if(buscaBT(getRaizBT(bt), NULL, chave, NODE_CHAVE,fBin)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
             else fprintf(fOut, "O REGISTRO NAO ESTA NA ARVORE!\n");
         }
     }
