@@ -16,6 +16,9 @@ struct Node {
     int    *offsetFilhos;
     Node  **filhos;
 };  
+void diskWrite(Node *node, int order, FILE *fp);
+
+Node *diskRead(int offset, int ordem, FILE *fp);
 
 Node *criaNode(int ordem, bool ehFolha, int offset){
     Node* node = malloc(sizeof(Node));
@@ -90,7 +93,10 @@ void liberaNode(Node *node){
 
     free(node);
 }
-
+int calculaOffset(int positionDisk, int ordem){
+    int soma = positionDisk*(2*sizeof(int)+sizeof(bool)+(sizeof(int)*(ordem-1))+(sizeof(int)*(ordem)));
+    return soma;
+}
 void printNode(Node *node, FILE *arq){
     if (node == NULL) return;
 
@@ -176,7 +182,7 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
     */
 }
 
-void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) { 
+void insereSemDividir(Node *raiz, int chave, int registro, BT *bt, FILE *arq) { 
     int i = raiz->qtdChaves;
     
     if(ehFolhaNode(raiz)){
@@ -194,7 +200,7 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
         ///Node *filho = diskRead(raiz->filhos[i]);
         Node *filho = raiz->filhos[i-1];
 
-        insereSemDividir(filho, chave, registro, bt); 
+        insereSemDividir(filho, chave, registro, bt, arq); 
         if(getQtdChavesNode(filho)==getOrdemBT(bt))
             divideNode(raiz, i-1,filho, bt);
     }
@@ -208,26 +214,25 @@ void insereChaveRegistro(Node *n, int chave, int registro, int ind){
     n->qtdChaves++;
 }
 
-void insereBT(BT *bt, int chave, int registro){
+void insereBT(BT *bt, int chave, int registro, FILE *arq){
     Node* raiz = getRaizBT(bt);
     //printf("%d ", chave);
     if(raiz == NULL){
         bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
         insereChaveRegistro(bt->raiz, chave, registro, 0);
-        // escreve no bin
         return;
     }
 
-    Node *busca = buscaBT(raiz, NULL, chave, NODE_CHAVE);
+    Node *busca = buscaBT(raiz, NULL, chave, NODE_CHAVE, arq);
     if(busca != NULL){
         int idx = getIdxChave(busca,chave);
         busca->registros[idx] = registro;
-        //diskwrite(busca);
+        diskWrite(busca, getOrdemBT(bt) ,arq);
         return;
     }
 
-    insereSemDividir(raiz, chave, registro, bt);
+    insereSemDividir(raiz, chave, registro, bt, arq);
     if((bt->ordem) == raiz->qtdChaves ){ 
         bt->numNos++;
         Node *novo = criaNode(bt->ordem, false, bt->numNos);
@@ -236,7 +241,8 @@ void insereBT(BT *bt, int chave, int registro){
         bt->raiz = novo;
         divideNode(novo, 0, raiz, bt);
     }
-    // escreve no bin
+    diskWrite(bt->raiz,bt->ordem, arq);
+    diskRead(bt->numNos,bt->ordem,arq);
 }
 
 static Node *uneNode(Node *n1, Node *n2) {
@@ -465,23 +471,20 @@ static bool remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
     }
 }
 
-void removeBT(BT *bt, int chave) {
+void removeBT(BT *bt, int chave, FILE *arq) {
     if (bt == NULL || chave < 0) return;
 
     /** Observações possíveis: Cada nó deve ter pelo menos (t/2) - 1 elementos */
-    Node *pai = buscaBT(bt->raiz, NULL, chave, NODE_PAI);
-    Node *node = buscaBT(bt->raiz, pai, chave, NODE_CHAVE);
-
-    // não existe nó com a chave requisitada
-    if (node == NULL) return;
-
+    Node *pai = buscaBT(bt->raiz, NULL, chave, NODE_PAI, arq);
+    Node *node = buscaBT(bt->raiz, pai, chave, NODE_CHAVE, arq);
     int idxChave = getIdxChave(node, chave);
+
     if (remocaoCaso1(node, chave, idxChave));
     else if (remocaoCaso2(node, chave, idxChave));
     else remocaoCaso3(bt, pai, chave, idxChave);
 }
 
-Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
+Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA, FILE *arq) {
     if(node == NULL) return NULL;
 
     int i = 0;
@@ -493,7 +496,7 @@ Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
             else if(ehFolhaNode(node)) return NULL;
             else{
                 //diskRead(node->filhos[i]);
-                return buscaBT(node->filhos[i], node, chave, NODE_CHAVE);
+                return buscaBT(node->filhos[i], node, chave, NODE_CHAVE, arq);
             }
 
         case NODE_PAI:
@@ -501,7 +504,7 @@ Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA) {
             else if(ehFolhaNode(node)) return NULL;
             else{
                 //diskRead(node->filhos[i]);
-                return buscaBT(node->filhos[i], node, chave, NODE_PAI);
+                return buscaBT(node->filhos[i], node, chave, NODE_PAI, arq);
             }
     }
 }
@@ -590,4 +593,49 @@ void printBT(BT* bt, FILE* arq){
 
         liberaFila(fila);
     }
+}
+void diskWrite(Node *node, int order, FILE *fp)
+{
+    int offsetFile = calculaOffset(getOffset(node), order);
+    int inicio = offsetFile*(getOffset(node)-1);
+    fseek(fp, offsetFile, inicio);                                 
+
+    int numKeys = getQtdChavesNode(node);
+    bool isLeaf = ehFolhaNode(node);
+    int posInDisk = getOffset(node);
+    
+
+    fwrite(&numKeys, sizeof(getQtdChavesNode(node)), 1, fp);          // write the information to the file
+    fwrite(&isLeaf, sizeof(ehFolhaNode(node)), 1, fp);
+    fwrite(&posInDisk, sizeof(getOffset(node)), 1, fp);
+    fwrite(getChavesNode(node), sizeof(getFilhosNode(node)), order -1, fp);
+    //fwrite(getFilhosNode(node), sizeof(getFilhosNode(node)), order, fp);
+
+}
+Node *diskRead(int offset, int ordem, FILE *fp)
+{
+    int offsetFile = calculaOffset(offset, ordem);
+    int inicio = (offset-1)*offsetFile;
+    fseek(fp, offsetFile,inicio);      // set the file pointer there
+
+    int numKeys =0, pos_in_disk = 0, key = 0;
+    bool isLeaf;
+
+    fread(&numKeys, sizeof(int), 1, fp);    // read the information from the file
+    fread(&isLeaf, sizeof(bool), 1, fp);
+    fread(&pos_in_disk, sizeof(int), 1, fp);
+
+    Node *read_node = criaNode( ordem, isLeaf,offset);
+
+    
+    fread(read_node->chaves, sizeof(int), ordem-1, fp);
+    /*fread(read_node->filhos, sizeof(Node*), ordem, fp);
+    setPosInDisk(read_node, pos_in_disk);
+
+    for(int i=0; i < order-1; i++)
+        setKeysValues(read_node, keys[i], i);
+    for(int i=0; i < order; i++)
+        setKidsValues(read_node, kids[i], i);
+    */
+    return read_node;
 }
