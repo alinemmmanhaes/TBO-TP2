@@ -585,7 +585,7 @@ void removeNode(Node *node, Node *pai, int chave) {
     if (node == NULL || chave < 0) return;
 
     int idxChave = getIdxChave(node, chave);
-    if (podeRemoverDoNode(node) == false) {
+    if (podeRemoverDoNode(node) == false && pai) {
         node = preenche(pai, chave, idxChave);
         idxChave = getIdxChave(node, chave);
     }
