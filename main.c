@@ -30,7 +30,7 @@ int main(int argc, char const *argv[]){
 
     BT* bt = criaBT(ordemBT);
     
-    char c = "";
+    char c = '\0';
     int chave = 0, registro = 0;
     for(int i = 0 ; i < nOperacoes; i++){
         fscanf(fIn, "%c ", &c);

@@ -437,7 +437,7 @@ void removeBT(BT *bt, int chave) {
  * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
  * irmaos adjacentes
  */
-static Node *preenche(BT *bt, Node *pai, int chave, int idxChave) {
+static Node *remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
     if (pai == NULL || chave < 0 || idxChave < 0) return NULL;
 
     // encontra o indice do pai q mapeia o filho
@@ -538,7 +538,7 @@ void removeNode(BT *bt, Node *node, Node *pai, int chave) {
 
     int idxChave = getIdxChave(node, chave);
     if (podeRemoverDoNode(node) == false && pai) {
-        node = preenche(bt, pai, chave, idxChave);
+        node = remocaoCaso3(bt, pai, chave, idxChave);
         idxChave = getIdxChave(node, chave);
     }
 
