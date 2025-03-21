@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]){
     sprintf(in, "%s", argv[1]);
     sprintf(out, "%s", argv[2]);
 */
-    FILE* fIn = fopen("teste.txt", "r");
+    FILE* fIn = fopen("casos_teste/caso_teste_4.txt", "r");
     if(fIn == NULL){
         printf("Erro na criação do arquivo de entrada\n");
         return 1;
@@ -30,9 +30,9 @@ int main(int argc, char const *argv[]){
 
     BT* bt = criaBT(ordemBT);
     
-    char c;
-    int chave, registro = 0;
-    for(int i=0; i<nOperacoes; i++){
+    char c = "";
+    int chave = 0, registro = 0;
+    for(int i = 0 ; i < nOperacoes; i++){
         fscanf(fIn, "%c ", &c);
 
         if(c == 'I') {

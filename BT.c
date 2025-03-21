@@ -5,7 +5,7 @@
 #include "BT.h"
 #include "fila.h"
 
-void removeNode(Node *node, Node *pai, int chave);
+void removeNode(BT *bt, Node *node, Node *pai, int chave);
 
 //Node
 struct Node {
@@ -76,8 +76,8 @@ int getOrdemNode(Node *node) {
     return node->ordem;
 }
 
-void liberaNode(Node *node){
-    if (node == NULL) return;
+Node *liberaNode(Node *node){
+    if (node == NULL) return NULL;
 
     free(node->chaves);
     free(node->registros);
@@ -85,12 +85,13 @@ void liberaNode(Node *node){
 
     if (!ehFolhaNode(node)){
         for(int i = 0; i <= node->qtdChaves; i++){
-            liberaNode(node->filhos[i]);
+            node->filhos[i] = liberaNode(node->filhos[i]);
         }
     }
     free(node->filhos);
 
     free(node);
+    return NULL;
 }
 
 void printNode(Node *node, FILE *arq){
@@ -105,7 +106,7 @@ void printNode(Node *node, FILE *arq){
 
     } else {
         fprintf(arq, "[");
-        for(int i=0; i<node->qtdChaves; i++){
+        for(int i = 0; i < node->qtdChaves; i++){
             fprintf(arq, "key: %d, ", node->chaves[i]);
         }
         fprintf(arq, "]");
@@ -150,14 +151,17 @@ void divideNode(Node *raizNova, int ind, Node *raizAntiga, BT *bt) {
         maiores->registros[j] = raizAntiga->registros[j+limite];
     }
 
+    Node *aux = NULL;
     if(!ehFolhaNode(raizAntiga)) {
         for (int i = 0; i <= getQtdChavesNode(maiores); i++){
+            aux =  maiores->filhos[i];
             maiores->filhos[i] = raizAntiga->filhos[i+limite];
+            raizAntiga->filhos[i+limite] = aux;
         }
     }
     raizAntiga->qtdChaves = indSplit;
  
-    for(int k = raizNova->qtdChaves+1; k >= ind+1; k--){
+    for(int k = raizNova->qtdChaves+1; k >= ind+1; k--) {
         raizNova->filhos[k] = raizNova->filhos[k-1];
     }
     raizNova->filhos[ind+1] = maiores;
@@ -182,7 +186,7 @@ void insereSemDividir(Node *raiz, int chave, int registro, BT *bt) {
     int i = raiz->qtdChaves;
     
     if(ehFolhaNode(raiz)){
-        while(i>=1 && (chave < raiz->chaves[i-1])){
+        while(i>=1 && (chave < raiz->chaves[i-1])) {
             raiz->chaves[i] = raiz->chaves[i-1];
             raiz->registros[i] = raiz->registros[i-1];
             i--;     
@@ -212,7 +216,6 @@ void insereChaveRegistro(Node *n, int chave, int registro, int ind){
 
 void insereBT(BT *bt, int chave, int registro){
     Node* raiz = getRaizBT(bt);
-    //printf("%d ", chave);
     if(raiz == NULL){
         bt->numNos++;
         bt->raiz = criaNode(bt->ordem, true, bt->numNos);
@@ -243,17 +246,34 @@ void insereBT(BT *bt, int chave, int registro){
 
 static Node *uneNode(Node *n1, Node *n2, int chave, int registro) {
     int qtdChavesN1 = getQtdChavesNode(n1), qtdChavesN2 = getQtdChavesNode(n2);
+
     n1->chaves[qtdChavesN1] = chave;
     n1->registros[qtdChavesN1] = registro;
 
+    int aux = 0;
     for(int i = 1; i <= qtdChavesN2; i++) {
+        aux = n1->chaves[qtdChavesN1+i];
         n1->chaves[qtdChavesN1+i] = n2->chaves[i-1];
+        n2->chaves[i-1] = aux;
+
+        aux = n1->registros[qtdChavesN1+i];
         n1->registros[qtdChavesN1+i] = n2->registros[i-1];
+        n2->registros[i-1] = n1->registros[qtdChavesN1+i];
     }
 
     if (ehFolhaNode(n1) == false) {
-        for (int i = 1; i <= qtdChavesN2+1; i++)
+        Node *aux = NULL;
+        for (int i = 1; i <= qtdChavesN2+1; i++) {
+            aux = n1->filhos[i+qtdChavesN1];
             n1->filhos[i+qtdChavesN1] = n2->filhos[i-1];
+            n2->filhos[i-1] = aux;
+        }
+    }
+
+    if (ehFolhaNode(n2) == false){
+        for(int i = 0; i <= n2->qtdChaves; i++) {
+            n2->filhos[i] = NULL;
+        }
     }
 
     n1->qtdChaves += n2->qtdChaves+1;
@@ -309,8 +329,11 @@ static void shift(Node *node, int chave, int idxChave) {
 }
 
 static void shiftFilhos(Node *node, int idxChave){
+    Node *aux = NULL;
     for(int i = idxChave; i < getQtdChavesNode(node); i++){
+        aux = node->filhos[i];
         node->filhos[i] = node->filhos[i+1];
+        node->filhos[i+1] = aux;
     }
 }
 
@@ -347,7 +370,7 @@ static void remocaoCaso1(Node *node, int chave, int idxChave) {
 /** ----- Caso 2 ----- */
 /* (A) Se o filho a esquerda do nó a remover com chave k tiver pelo menos t/2 elementos, 
 * encontra o maior do filho a esquerda (k'), troca de lugar com k e remove k */
-static void remocaoCaso2(Node *node, int chave, int idxChave) {
+static void remocaoCaso2(BT *bt, Node *node, int chave, int idxChave) {
     if (node == NULL || chave < 0 || idxChave < 0) return;
 
     if (ehFolhaNode(node) == true) return;
@@ -365,7 +388,7 @@ static void remocaoCaso2(Node *node, int chave, int idxChave) {
         setChaveRegistroTroca(node->filhos[ESQUERDA], chave_troca, registro_troca, getQtdChavesNode(node->filhos[ESQUERDA])-1);
         /** tira do disco o nó "node" */
         // node->filhos[ESQUERDA]->qtdChaves--;
-        removeNode(node->filhos[ESQUERDA], node, chave_troca);
+        removeNode(bt, node->filhos[ESQUERDA], node, chave_troca);
         
         /* (B) Se for o filho a direita, a mesma coisa, mas com o menorfilho a direita */
     } else if (podeRemoverDoNode(node->filhos[DIREITA])) {
@@ -380,7 +403,7 @@ static void remocaoCaso2(Node *node, int chave, int idxChave) {
         // shift(node->filhos[DIREITA], chave_troca, 0);
         /** tira do disco o nó "node" */
         // node->filhos[DIREITA]->qtdChaves--;
-        removeNode(node->filhos[DIREITA], node, chave_troca);
+        removeNode(bt, node->filhos[DIREITA], node, chave_troca);
     
     /* (C) Em caso de ambos terem (t/2)-1 chaves, copia as coisa de um nó para para completar o outro */
     } else if (getQtdChavesNode(node->filhos[ESQUERDA]) + getQtdChavesNode(node->filhos[DIREITA]) <= ordem-1 ) {
@@ -389,97 +412,10 @@ static void remocaoCaso2(Node *node, int chave, int idxChave) {
         Node *old = uneNode(node->filhos[ESQUERDA], node->filhos[DIREITA], chave, registro);
         shiftFilhos(node, idxChave+1);
         node->qtdChaves--;
-        liberaNode(old);
+        old = liberaNode(old);
         /** tira do disco o nó "node" */
         /** reescreve o node new no lugar do filho a esquerda da chave */
-        removeNode(node->filhos[ESQUERDA], node, chave);
-    }
-}
-
-/** ----- Caso 3 ----- */
-/**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
- *     (A) (distribuicao) se ci[x] possuir t/2 -1 elementos e possuir um irmao adj com pelo 
- * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
- * irmaos adjacentes
- */
-static void remocaoCaso3(BT *bt, Node *pai, int chave, int idxChave) {
-    if (bt == NULL || pai == NULL || chave < 0 || idxChave < 0) return;
-
-    // encontra o indice do pai q mapeia o filho
-    int i = 0;
-    for (i = 0; i < getQtdChavesNode(pai) && pai->chaves[i] < chave; i++) { }
-    int idxPai = i - 1;
-
-    Node *left, *mid, *right;
-    if (idxPai == 0) {
-        left = mid = pai->filhos[idxPai];
-        right = pai->filhos[idxPai];
-
-    } else if (idxPai == pai->qtdChaves-1) { 
-        left = pai->filhos[idxPai-1]; 
-        mid = right = pai->filhos[idxPai];
-
-    } else {
-        left = pai->filhos[idxPai-1];
-        mid = pai->filhos[idxPai];
-        right = pai->filhos[idxPai+1];
-    }
-
-    /**
-     * if n[ci[x]] >= t/2 - 1 && n[ci-1[x]] >= t/2 -1:
-     *      bota oq ta em x em ci e re-ordena
-     *      promove alguem de ci-1 pra x
-     *  
-     * else if n[ci[x]] >= t/2 - 1 && n[ci+1[x]] >= t/2 -1:
-     *      bota oq ta em x em ci e re-ordena
-     *      promove alguem de ci+1 pra x
-     */
-
-    // pro lado esquerdo
-    int ordem = getOrdemBT(bt);
-    if (mid != left && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(left) >= (ordem - ordem/2)) {
-        insereNode(mid, chave, mid->registros[idxChave]);
-        // trocaConteudos(&pai->chaves[idxPai], &mid->chaves[idxChave]);
-        // trocaConteudos(&pai->registros[idxPai], &mid->registros[idxChave]);
-
-        /** promocao */
-        int registro_troca = getMaiorRegistro(left);
-        int chave_troca = getMaiorChave(left);
-        pai->registros[idxPai] = registro_troca;
-        pai->chaves[idxPai] = chave_troca;
-        left->qtdChaves--;
-
-
-    // pro lado direito
-    } else if (mid != right && getQtdChavesNode(mid) == (ordem - ordem/2 - 1) && getQtdChavesNode(right) >= (ordem - ordem/2)) {
-        insereNode(mid, chave, mid->registros[idxChave]);
-        // trocaConteudos(&pai->chaves[idxPai+1], &mid->chaves[idxChave]);
-        // trocaConteudos(&pai->registros[idxPai+1], &mid->registros[idxChave]);
-        
-        /** promove */
-        int registro_troca = getMenorRegistro(right);
-        int chave_troca = getMenorChave(right);
-        pai->registros[idxPai+1] = registro_troca;
-        pai->chaves[idxPai+1] = chave_troca;
-        shift(right, chave_troca, 0);
-        right->qtdChaves--;
-
-    }
-    
-    /** 
-     *     (B) (concatenacao) se ci[x] e seus irmaos da esquerda e direita tiverem t/2 -1 elementos
-     *     deve mover a chave de x para ci[x] e unir ci[x] com um dos irmaos
-     */
-    /**
-     * if (ci[x] && ci-1[x] && ci+1[x] == t/2-1)
-     *      bota oq ta em x em ci
-     *      junta ci[x] com ci+1[x] ou ci-1[x]
-     */
-
-    if (getQtdChavesNode(left) == getQtdChavesNode(mid) == getQtdChavesNode(right) == (ordem - ordem/2 - 1) ) {
-        trocaConteudos(&pai->chaves[idxPai], &mid->chaves[getQtdChavesNode(mid)-1]); // esses indices estao certos?
-        trocaConteudos(&pai->registros[idxPai], &mid->registros[getQtdChavesNode(mid)-1]);
-        uneNode(left, mid, chave, pai->registros[idxPai]);
+        removeNode(bt, node->filhos[ESQUERDA], node, chave);
     }
 }
 
@@ -492,10 +428,16 @@ void removeBT(BT *bt, int chave) {
 
     // não existe nó com a chave requisitada
     if (node == NULL) return;
-    removeNode(node, pai, chave);
+    removeNode(bt, node, pai, chave);
 }
 
-static Node *preenche(Node *pai, int chave, int idxChave) {
+/** ----- Caso 3 ----- */
+/**    condicao: x é o nó interno, ci[x] é a subarvore dos filhos de x
+ *     (A) (distribuicao) se ci[x] possuir t/2 -1 elementos e possuir um irmao adj com pelo 
+ * menos t/2  elementos, move o valor de x para ci[x] e promove uma chave de um dos 
+ * irmaos adjacentes
+ */
+static Node *preenche(BT *bt, Node *pai, int chave, int idxChave) {
     if (pai == NULL || chave < 0 || idxChave < 0) return NULL;
 
     // encontra o indice do pai q mapeia o filho
@@ -537,6 +479,7 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
         left->qtdChaves--;
         return mid;
 
+    // pro lado direito
     } else if (mid != right && getQtdChavesNode(right) >= (ordem - ordem/2)) {
         insereNode(mid, pai->chaves[idxPai], pai->registros[idxPai]);
 
@@ -549,7 +492,6 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
         pai->registros[idxPai] = registro_troca;
         pai->chaves[idxPai] = chave_troca;
         shift(right, chave_troca, 0);
-        shiftFilhos(right, 0);
         right->qtdChaves--;
         return mid;
 
@@ -561,7 +503,12 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
             Node *old = uneNode(mid, right, chavePai, registroPai);
             shiftFilhos(pai, idxPai+1);
             pai->qtdChaves--;
-            liberaNode(old);
+            if (pai == bt->raiz && getQtdChavesNode(pai) == 0) {
+                bt->raiz = mid;
+                pai->ehFolha = true;
+                pai = liberaNode(pai);
+            } 
+            old = liberaNode(old);
             /** tira do disco o nó "node" */
             /** reescreve o node new no lugar do filho a esquerda da chave */
             return mid;
@@ -573,7 +520,12 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
             Node *old = uneNode(left, mid, chavePai, registroPai);
             shiftFilhos(pai, idxPai);
             pai->qtdChaves--;
-            liberaNode(old);
+            if (pai == bt->raiz && getQtdChavesNode(pai) == 0) {
+                bt->raiz = left;
+                pai->ehFolha = true;
+                pai = liberaNode(pai);
+            }
+            old = liberaNode(old);
             /** tira do disco o nó "node" */
             /** reescreve o node new no lugar do filho a esquerda da chave */
             return left;
@@ -581,19 +533,19 @@ static Node *preenche(Node *pai, int chave, int idxChave) {
     }
 }
 
-void removeNode(Node *node, Node *pai, int chave) {
+void removeNode(BT *bt, Node *node, Node *pai, int chave) {
     if (node == NULL || chave < 0) return;
 
     int idxChave = getIdxChave(node, chave);
     if (podeRemoverDoNode(node) == false && pai) {
-        node = preenche(pai, chave, idxChave);
+        node = preenche(bt, pai, chave, idxChave);
         idxChave = getIdxChave(node, chave);
     }
 
     if (ehFolhaNode(node)) {
         remocaoCaso1(node, chave, idxChave);
     } else {
-        remocaoCaso2(node, chave, idxChave);
+        remocaoCaso2(bt, node, chave, idxChave);
     }
 }
 
@@ -639,7 +591,7 @@ int getNumNosBT(BT *bt) {
 void liberaBT(BT *bt) {
     if (bt == NULL) return;
 
-    liberaNode(bt->raiz);
+    bt->raiz = liberaNode(bt->raiz);
     free(bt);
 }
 
