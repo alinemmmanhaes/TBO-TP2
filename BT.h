@@ -10,13 +10,13 @@ typedef struct Node Node;
 
 BT *criaBT(int ordem);
 
-void insereBT(BT *bt, int chave, int registro);
+void insereBT(BT *bt, int chave, int registro, FILE *arq);
 
-void removeBT(BT *bt, int chave);
+void removeBT(BT *bt, int chave, FILE *arq);
 
-Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA);
+Node *buscaBT(Node *node, Node *pai, int chave, int MODO_BUSCA, FILE *arq);
 
-void printBT(BT* bt, FILE* arq);
+void printBT(BT* bt, FILE* arq, FILE *bin);
 
 void insereChaveRegistro(Node *n, int chave, int registro, int ind);
 
@@ -27,5 +27,9 @@ int getOrdemBT(BT *bt);
 int getNumNosBT(BT *bt);
 
 void liberaBT(BT *bt);
+
+Node *diskRead(int offset, int ordem, FILE *fp);
+
+void diskWrite(Node *node, int order, FILE *fp);
 
 #endif // !_BT_H_

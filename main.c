@@ -24,6 +24,12 @@ int main(int argc, char const *argv[]){
         return 1;
     }
 
+    FILE *fBin = fopen("binario", "w+b");
+    if(fBin == NULL){
+        printf("Erro na criação do arquivo binario\n");
+        return 1;
+    }
+
     int ordemBT, nOperacoes;
     fscanf(fIn, "%d%*c", &ordemBT);
     fscanf(fIn, "%d%*c", &nOperacoes);
@@ -37,24 +43,25 @@ int main(int argc, char const *argv[]){
 
         if(c == 'I') {
             fscanf(fIn, "%d, %d%*c", &chave, &registro);
-            insereBT(bt, chave, registro);
+            insereBT(bt, chave, registro, fBin);
 
         } else if(c == 'R') {
             fscanf(fIn, "%d%*c", &chave);
-            removeBT(bt, chave);
+            removeBT(bt, chave, fBin);
 
         } else if(c == 'B') {
             fscanf(fIn, "%d%*c", &chave);
-            if(buscaBT(getRaizBT(bt), NULL, chave, NODE_CHAVE)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
+            if(buscaBT(getRaizBT(bt), NULL, chave, NODE_CHAVE, fBin)) fprintf(fOut, "O REGISTRO ESTA NA ARVORE!\n");
             else fprintf(fOut, "O REGISTRO NAO ESTA NA ARVORE!\n");
         }
     }
 
-    printBT(bt, fOut);
+    printBT(bt, fOut, fBin);
 
     liberaBT(bt);
     fclose(fIn);
     fclose(fOut);
+    fclose(fBin);
 
     return 0;
 }
